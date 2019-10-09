@@ -35,6 +35,7 @@ static void (*nek_ifoutfld_ptr)(int *);
 static void (*nek_setics_ptr)(void);
 static int  (*nek_bcmap_ptr)(int *, int*);
 static int  (*nek_nbid_ptr)(void);
+static void (*nek_get_coarse_galerkin_ptr)(double*,int*,int*,double*,double*);
 
 void noop_func(void) {}
 
@@ -89,6 +90,27 @@ void nek_map_m_to_n(double *a, int na, double *b, int nb) {
 
   (*nek_map_m_to_n_ptr)(a, &na, b, &nb, &if3d, w, &N);
   free(w);
+}
+
+void nek_get_coarse_galerkin(double *a,int nxc){
+  int nx1=nekData.nx1;
+  int ndim=nekData.ndim;
+  int nelv=nekData.nelv;
+
+  nxc++;
+  int ncr=nxc*nxc;
+  int workSize=nx1*nx1*nelv;
+  if(ndim==3){
+    workSize*=nx1;
+    ncr*=nxc;
+  }
+
+  double *w1=(double*)calloc(workSize,sizeof(double));
+  double *w2=(double*)calloc(workSize,sizeof(double));
+
+  (*nek_get_coarse_galerkin_ptr)(a,&ncr,&nxc,w1,w2);
+
+  free(w1); free(w2);
 }
 
 void nek_uf(double *u, double *v, double *w)
@@ -151,7 +173,7 @@ void set_function_handles(const char *session_in,int verbose) {
 
   // check if we need to append an underscore
   char us[2] = "";
-  char func[20];
+  char func[BUFSIZ];
   usrdat_ptr = (void (*)(void)) dlsym(handle, "usrdat_");
   if (usrdat_ptr) strcpy(us,"_");
   dlerror();
@@ -195,6 +217,9 @@ void set_function_handles(const char *session_in,int verbose) {
                        dlsym(handle, fname("map_m_to_n"));
   check_error(dlerror());
   nek_nbid_ptr = (int (*)(void)) dlsym(handle,fname("nekf_nbid"));
+  check_error(dlerror());
+  nek_get_coarse_galerkin_ptr=(void(*)(double*,int*,int*,double*,double*)) \
+                              dlsym(handle,fname("nekf_get_coarse_galerkin"));
   check_error(dlerror());
 
 
