@@ -197,6 +197,7 @@ set(THIRD_PARTY_INCLUDES ${THIRD_PARTY_INCLUDES}
 )
 
 set(NEKRS_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}/3rd_party/nek
   ${CMAKE_CURRENT_SOURCE_DIR}/src/udf
   ${NEKINTERFACEDIR}
 )
@@ -265,11 +266,15 @@ set(SRC
     src/dummy.f
 )
 
+add_library(nekInterface SHARED ${SRC_THIRD_PARTY_DIR}/nek/nek.cpp)
+set_target_properties(nekInterface PROPERTIES LINKER_LANGUAGE CXX)
+target_include_directories(nekInterface PUBLIC ${SRC_THIRD_PARTY_DIR}/nek)
+
 add_library(nekrs-lib SHARED ${SRC})
 set_target_properties(nekrs-lib PROPERTIES LINKER_LANGUAGE CXX)
 add_dependencies(nekrs-lib occa_build libparanumal_build nek_build)
-target_link_libraries(nekrs-lib ${CMAKE_DL_LIBS} elliptic parAlmond P ogs occa)
-target_include_directories(nekrs-lib PRIVATE ${THIRD_PARTY_INCLUDES} ${NEKRS_INCLUDES})
+target_link_libraries(nekrs-lib ${CMAKE_DL_LIBS} nekInterface elliptic parAlmond P ogs occa)
+target_include_directories(nekrs-lib PUBLIC ${THIRD_PARTY_INCLUDES} ${NEKRS_INCLUDES})
 set_target_properties(nekrs-lib PROPERTIES OUTPUT_NAME nekrs)
 
 add_executable(nekrs-bin src/main.cpp)
@@ -288,7 +293,7 @@ configure_file(install_script.in.cmake install_script.cmake @ONLY)
 install(SCRIPT ${CMAKE_CURRENT_BINARY_DIR}/install_script.cmake)
 
 #install nekRS
-install(TARGETS nekrs-lib nekrs-bin
+install(TARGETS nekrs-lib nekrs-bin nekInterface
   RUNTIME DESTINATION bin
   LIBRARY DESTINATION lib
   PUBLIC_HEADER DESTINATION include

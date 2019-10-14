@@ -93,6 +93,7 @@ install_glob_if_newer(@CMAKE_SOURCE_DIR@/scripts * @CMAKE_INSTALL_PREFIX@/bin)
 install_glob_if_newer(@CMAKE_SOURCE_DIR@/src "*.h*" @CMAKE_INSTALL_PREFIX@/include)
 install_glob_if_newer(@CMAKE_SOURCE_DIR@/src/udf "*.hpp" @CMAKE_INSTALL_PREFIX@/include)
 install_glob_if_newer(@CMAKE_SOURCE_DIR@/src/nekInterface "*.hpp" @CMAKE_INSTALL_PREFIX@/include)
+install_glob_if_newer(@CMAKE_SOURCE_DIR@/3rd_party/nek "*.hpp" @CMAKE_INSTALL_PREFIX@/include)
 install_glob_if_newer(@CMAKE_SOURCE_DIR@/src/okl "*.okl" @CMAKE_INSTALL_PREFIX@/okl)
 
 install_files_if_newer(@CMAKE_SOURCE_DIR@/src/udf/CMakeLists.txt @CMAKE_INSTALL_PREFIX@/udf)

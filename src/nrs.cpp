@@ -90,7 +90,7 @@ setupAide setup(MPI_Comm comm_in, int buildOnly, int sizeTarget,
   MPI_Barrier(comm);
 
   // init nek
-  nek_setup(comm, options);
+  nekInterfaceAdapterSetup(comm, options);
   nek_setic();
   nek_userchk();
 
