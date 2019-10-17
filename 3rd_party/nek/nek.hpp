@@ -38,7 +38,7 @@ void  nek_ifoutfld(int i);
 void  nek_userchk(void);
 int   nek_bcmap(int bid, int ifld);
 int   nek_nbid(void);
-void  nek_get_coarse_galerkin(double *a,int nx1,int nxc,int ndim, int nelv);
+void  nek_get_coarse_galerkin(double *a,double lambda,int nx1,int nxc,int ndim, int nelv);
 void  nek_restart(char *str,int len);
 void  nek_setup(MPI_Fint nek_comm,char *cwd,char *casename,int nscal);
 void  nek_setics(void);

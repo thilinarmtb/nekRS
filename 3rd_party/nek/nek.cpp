@@ -28,7 +28,7 @@ static void (*nek_ifoutfld_ptr)(int *);
 static void (*nek_setics_ptr)(void);
 static int  (*nek_bcmap_ptr)(int *, int*);
 static int  (*nek_nbid_ptr)(void);
-static void (*nek_get_coarse_galerkin_ptr)(double*,int*,int*,double*,double*);
+static void (*nek_get_coarse_galerkin_ptr)(double*,double*,int*,int*,double*,double*);
 
 void noop_func(void) {}
 
@@ -63,7 +63,7 @@ void nek_map_m_to_n(double *a, int na, double *b, int nb) {
   free(w);
 }
 
-void nek_get_coarse_galerkin(double *a,int nx1,int nxc,int ndim, int nelv){
+void nek_get_coarse_galerkin(double *a,double lambda,int nx1,int nxc,int ndim, int nelv){
   int ncr=nxc*nxc;
   int workSize=nx1*nx1*nelv;
   if(ndim==3){
@@ -74,7 +74,7 @@ void nek_get_coarse_galerkin(double *a,int nx1,int nxc,int ndim, int nelv){
   double *w1=(double*)calloc(workSize,sizeof(double));
   double *w2=(double*)calloc(workSize,sizeof(double));
 
-  (*nek_get_coarse_galerkin_ptr)(a,&ncr,&nxc,w1,w2);
+  (*nek_get_coarse_galerkin_ptr)(a,&lambda,&ncr,&nxc,w1,w2);
 
   free(w1); free(w2);
 }
@@ -191,7 +191,7 @@ void set_function_handles(const char *session_in,int verbose) {
   check_error(dlerror());
   nek_nbid_ptr = (int (*)(void)) dlsym(handle,fname("nekf_nbid"));
   check_error(dlerror());
-  nek_get_coarse_galerkin_ptr=(void(*)(double*,int*,int*,double*,double*)) \
+  nek_get_coarse_galerkin_ptr=(void(*)(double*,double*,int*,int*,double*,double*)) \
                               dlsym(handle,fname("nekf_get_coarse_galerkin"));
   check_error(dlerror());
 

@@ -417,19 +417,22 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine nekf_get_coarse_galerkin(a,ncr,nxc,w1,w2)
+      subroutine nekf_get_coarse_galerkin(a,lambda,ncr,nxc,w1,w2)
       include 'SIZE'
       include 'TOTAL'
 
       real a(ncr,ncr,1)
+      real lambda
       real w1(lx1*ly1*lz1,nelv),w2(lx1*ly1*lz1,nelv)
       integer n
 
       common /scrvhx/ h1(lx1*ly1*lz1*lelv),h2(lx1*ly1*lz1*lelv)
 
       n = lx1*ly1*lz1*nelv
-      call rone (h1,n)
-      call rzero(h2,n)
+      call rone(h1,n)
+      do i=1,n
+        h2(i)=lambda
+      enddo
       call get_local_crs_galerkin(a,ncr,nxc,h1,h2,w1,w2)
 
       end
