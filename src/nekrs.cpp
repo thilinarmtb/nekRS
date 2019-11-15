@@ -300,4 +300,3 @@ static void setCache(string dir)
   if (!getenv("OCCA_CACHE_DIR"))
       occa::env::OCCA_CACHE_DIR = cache_dir + "/occa/";
 }
-

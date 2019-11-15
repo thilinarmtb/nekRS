@@ -125,6 +125,8 @@ typedef struct {
   occa::kernel subCycleStrongCubatureVolumeKernel;
   occa::kernel subCycleStrongVolumeKernel;
 
+  occa::kernel userfKernel;
+
   occa::memory o_invLumpedMassMatrix;
   
   occa::kernel constrainKernel;

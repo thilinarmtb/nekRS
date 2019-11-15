@@ -159,8 +159,8 @@ void makeq(ins_t *ins, dfloat time, occa::memory o_NS, occa::memory o_FS){
 
   ins->setScalarKernel(cds->Ntotal*cds->NSfields, 0.0, o_FS);
   
-  if(udf.sEqnSource)
-    udf.sEqnSource(ins, time, cds->o_S, o_FS);
+  const dlong Nlocal = ins->mesh->Nelements * ins->mesh->Np;
+  ins->userfKernel(Nlocal, ins->fieldOffset, o_FS);
 
   if(ins->options.compareArgs("FILTER STABILIZATION", "RELAXATION"))
     ins->SFilterKernel(mesh->Nelements,
@@ -233,7 +233,9 @@ void makef(ins_t *ins, dfloat time, occa::memory o_NU, occa::memory o_FU)
   }
 
   ins->setScalarKernel(ins->Ntotal*ins->NVfields, 0.0, o_FU);
-  if(udf.uEqnSource) udf.uEqnSource(ins, time, ins->o_U, o_FU);
+
+  const dlong Nlocal = ins->mesh->Nelements * ins->mesh->Np;
+  ins->userfKernel(Nlocal, ins->fieldOffset, o_FU);
   
   if(ins->options.compareArgs("FILTER STABILIZATION", "RELAXATION"))
     ins->VFilterKernel(mesh->Nelements,

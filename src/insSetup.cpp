@@ -675,6 +675,10 @@ ins_t *insSetup(mesh_t *mesh, setupAide &options)
     MPI_Barrier(mesh->comm);
   }
 
+  // ===========================================================================
+  // Build udf kernels - userf
+  ins->userfKernel=udfBuildKernel(ins,"userf");
+
   ins->o_EToB = mesh->device.malloc(mesh->Nelements*mesh->Nfaces*sizeof(int),
                                     ins->EToB);
 
