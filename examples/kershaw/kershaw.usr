@@ -1,0 +1,202 @@
+c-----------------------------------------------------------------------
+      subroutine uservp (ix,iy,iz,ieg)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
+      udiff  = 0
+      utrans = 0
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userf  (ix,iy,iz,ieg)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
+      ffx = 0.0
+      ffy = 0.0
+      ffz = 0.0
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userq  (ix,iy,iz,ieg)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
+      qvol   = 0.0
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userchk
+      include 'SIZE'
+      include 'TOTAL'
+
+      if (ifoutfld) call lambda2(t) 
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine useric (ix,iy,iz,ieg)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
+      c1 = pi * 0.5/0.6
+
+      arg = c1*z
+      if (arg.gt.0.5*pi) then
+        ux = 1.0
+      else
+        ux = sin(arg)
+      endif
+
+      uy=0.0
+      uz=0.0
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat3
+      include 'SIZE'
+      include 'TOTAL'
+
+      ifto = .true. ! required to lambda2
+ 
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat2
+      include 'SIZE'
+      include 'TOTAL'
+
+      logical ifaln,ifnorx,ifnory,ifnorz
+
+      do iel=1,nelt
+      do ifc=1,2*ndim
+         if (cbc(ifc,iel,1) .eq. 'v  ') boundaryID(ifc,iel) = 1
+         if (cbc(ifc,iel,1) .eq. 'O  ') boundaryID(ifc,iel) = 2
+         if (cbc(ifc,iel,1) .eq. 'W  ') boundaryID(ifc,iel) = 3
+         if (cbc(ifc,iel,1) .eq. 'SYM') then
+            call chknord(ifaln,ifnorx,ifnory,ifnorz,ifc,iel)
+            boundaryid(ifc,iel) = 4
+            if (ifnorz) boundaryid(ifc,iel) = 5
+         endif
+      enddo
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine right(eps, x, xx)
+        real eps, x, xx
+
+        if (x.le.0.5) then
+          xx = (2.0 - eps)*x
+        else
+          xx = 1.0 + eps*(x - 1.0)
+        endif
+
+        return
+      end
+c-----------------------------------------------------------------------
+      subroutine left(eps, x, xx)
+        real eps, x, xx
+
+        call right(eps, 1.0 - x, xx)
+        xx = 1.0 - xx
+
+        return
+      end
+c-----------------------------------------------------------------------
+      subroutine step(a, b, x, xx)
+        real a, b, x, xx
+
+        if (x.le.0.0) then
+          xx = a
+        else if (x.ge.1.0) then
+          xx = b
+        else
+          xx = a + (b - a)*x
+        endif
+
+        return
+      end
+c-----------------------------------------------------------------------
+      subroutine kershaw(epsy, epsz, x, y, z, xx, yy, zz)
+        real epsy, epsz, x, y, z, xx, yy, zz
+        real a, b
+        real lambda, t_lambda
+
+        integer layer
+
+        xx = x
+
+        layer = int(x*6.0)
+        lambda = (x - layer/6.0)*6.0
+        
+        if (layer.eq.0) then
+            call left(epsy, y, yy)
+            call left(epsz, z, zz)
+        else if ((layer.eq.1).or.(layer.eq.4)) then
+            call left(epsy, y, a)
+            call right(epsy, y, b)
+            call step(a, b, lambda, yy)
+
+            call left(epsz, z, a)
+            call right(epsz, z, b)
+            call step(a, b, lambda, zz)
+        else if (layer.eq.2) then
+            t_lambda = lambda/2.0
+
+            call left(epsy, y, b)
+            call right(epsy, y, a)
+            call step(a, b, t_lambda, yy)
+
+            call left(epsz, z, b)
+            call right(epsz, z, a)
+            call step(a, b, t_lambda, zz)
+        else if (layer.eq.3) then
+            t_lambda = (1.0 + lambda)/2.0
+
+            call left(epsy, y, b)
+            call right(epsy, y, a)
+            call step(a, b, t_lambda, yy)
+
+            call left(epsz, z, b)
+            call right(epsz, z, a)
+            call step(a, b, t_lambda, zz)
+        else
+            call right(epsy, y, yy)
+            call right(epsz, z, zz)
+        endif
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat
+        include 'SIZE'
+        include 'TOTAL'
+
+        real epsy, epsz
+        real x, y, z, xx, yy, zz
+        integer i
+
+        epsy = 0.1
+        epsz = 0.3
+
+        do i = 1, nelt*(2**ldim)
+          x = xc(i, 1)
+          y = yc(i, 1)
+          z = zc(i, 1)
+          call kershaw(epsy, epsz, x, y, z, xx, yy, zz)
+          xc(i, 1) = xx
+          yc(i, 1) = yy
+          zc(i, 1) = zz
+        enddo
+
+        return
+      end
+c-----------------------------------------------------------------------

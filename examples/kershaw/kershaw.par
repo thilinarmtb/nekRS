@@ -15,7 +15,7 @@ extrapolation = subCycling
 subCyclingSteps = 1
 
 writeControl = runTime
-writeInterval = 1.0
+writeInterval = 1.0e-3
 
 filtering = hpfrt 
 filterWeight = 8
@@ -25,7 +25,7 @@ filterModes = 1
 residualTol = 1e-04
 
 [VELOCITY]
-boundaryTypeMap = inlet, outlet, wall, slipY, slipZ
+boundaryTypeMap = inlet
 residualTol = 1e-06
 density = 1.0
 viscosity = -1400
