@@ -280,7 +280,7 @@ void* nrsPtr(void)
 void printRuntimeStatistics()
 {
   platform_t* platform = platform_t::getInstance(options, comm);
-  platform->timer.printRunStat();
+  platform->timer.printRunStatPaul(numSteps());
 }
 } // namespace
 

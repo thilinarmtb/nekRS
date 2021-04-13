@@ -223,6 +223,8 @@ double timer_t::query(const std::string tag,const std::string metric)
   if(upperMetric.compare("DEVICE:AVG") == 0) {
     MPI_Allreduce(&deviceElapsed,&retVal,1,MPI_DOUBLE,MPI_SUM,comm_);
     return retVal / (size * count);
+  } if(upperMetric.compare("COUNT") == 0) {
+    return count;
   }
   return NEKRS_TIMER_INVALID_METRIC;
 }
@@ -301,6 +303,66 @@ void timer_t::printRunStat()
     if(dEtime[8] > 0)
     std::cout << "  dotp                  " << dEtime[8] << " s\n";
 
+    std::cout << std::endl;
+
+    std::cout.unsetf ( std::ios::scientific );
+  }
+}
+
+void timer_t::printRunStatPaul(int nSteps)
+{
+  int rank;
+  MPI_Comm_rank(comm_, &rank);
+
+  double dEtime[10];
+  dEtime[0] = query("velocitySolve", "DEVICE:SUM");
+  dEtime[1] = query("pressureSolve", "DEVICE:SUM");
+  dEtime[2] = query("mg preconditioner", "DEVICE:SUM");
+  dEtime[3] = query("BoomerAMGSolve", "HOST:SUM");
+
+  int count[10];
+  count[0] = query("velocitySolve", "COUNT");
+  count[1] = query("pressureSolve", "COUNT");
+  count[2] = query("mg preconditioner", "COUNT");
+  count[3] = query("BoomerAMGSolve", "COUNT");
+
+  const char separator = ' ';
+  const int nameWidth = 20;
+  const int numWidth = 15;
+
+  if (rank == 0) {
+    std::cout.setf ( std::ios::scientific );
+
+    std::cout << "Runtime statistics:" << std::endl;
+    std::cout << std::left << std::setw(numWidth) << std::setfill(separator) << "# Steps";
+    std::cout << std::left << std::setw(nameWidth) << std::setfill(separator) << "Function";
+    std::cout << std::left << std::setw(numWidth) << std::setfill(separator) << "# Calls";
+    std::cout << std::left << std::setw(numWidth) << std::setfill(separator) << "time";
+    std::cout << std::left << std::setw(numWidth) << std::setfill(separator) << "\% of time";
+    std::cout << std::endl;
+
+    std::cout << std::left << std::setw(numWidth) << std::setfill(separator) << nSteps;
+    std::cout << std::left << std::setw(nameWidth) << std::setfill(separator) << "velocitySolve";
+    std::cout << std::left << std::setw(numWidth) << std::setfill(separator) << count[0];
+    std::cout << std::left << std::setw(numWidth) << std::setfill(separator) << dEtime[0];
+    std::cout << std::endl;
+
+    std::cout << std::left << std::setw(numWidth) << std::setfill(separator) << nSteps;
+    std::cout << std::left << std::setw(nameWidth) << std::setfill(separator) << "pressureSolve";
+    std::cout << std::left << std::setw(numWidth) << std::setfill(separator) << count[1];
+    std::cout << std::left << std::setw(numWidth) << std::setfill(separator) << dEtime[1];
+    std::cout << std::endl;
+
+    std::cout << std::left << std::setw(numWidth) << std::setfill(separator) << nSteps;
+    std::cout << std::left << std::setw(nameWidth) << std::setfill(separator) << "  preconditioner";
+    std::cout << std::left << std::setw(numWidth) << std::setfill(separator) << count[2];
+    std::cout << std::left << std::setw(numWidth) << std::setfill(separator) << dEtime[2];
+    std::cout << std::endl;
+
+    std::cout << std::left << std::setw(numWidth) << std::setfill(separator) << nSteps;
+    std::cout << std::left << std::setw(nameWidth) << std::setfill(separator) << "  coarse-grid";
+    std::cout << std::left << std::setw(numWidth) << std::setfill(separator) << count[3];
+    std::cout << std::left << std::setw(numWidth) << std::setfill(separator) << dEtime[3];
     std::cout << std::endl;
 
     std::cout.unsetf ( std::ios::scientific );
