@@ -6,7 +6,7 @@
 #include <genmap-impl.h>
 #include <parRSB.h>
 
-parRSB_options parrsb_default_options = {0, -1, 0, 0, 0, 1, 1, 1};
+parRSB_options parrsb_default_options = {0, -1, 0, 0, 0, 1, 1};
 
 void fparRSB_partMesh(int *part, int *seq, long long *vtx, double *coord,
                       int *nel, int *nv, int *options, int *comm, int *err) {
@@ -123,7 +123,7 @@ int parRSB_partMesh(int *part, int *seq, long long *vtx, double *coord, int nel,
 
   /* Report time and finish */
   if (rank == 0)
-    printf(" finished in %g s\n", time);
+    printf(" finished in %g s Yay\n", time);
 
   if (options->print_timing_info > 0) {
     double min[3], max[3], sum[3], buf[3];
