@@ -13,10 +13,8 @@ static int check_convergence(struct comm *gc, int max_pass, int max_iter) {
   for (i = 0; i < max_levels; i++) {
     sint converged = 1;
     int val = (int)metric_get_value(i, NFIEDLER);
-    if (val >= max_pass * max_iter) {
+    if (val >= max_pass * max_iter)
       converged = 0;
-      break;
-    }
 
     sint ibfr;
     comm_allreduce(gc, gs_int, gs_min, &converged, 1, &ibfr);
@@ -101,7 +99,7 @@ int genmap_rsb(genmap_handle h) {
 
     /* Bisect */
     double t = comm_time();
-    split_and_repair_partitions(h, lc, level, gc);
+    repair_partitions(h, lc, level, gc);
     t = comm_time() - t;
     metric_acc(BISECTANDREPAIR, t);
 
