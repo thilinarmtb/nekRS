@@ -23,6 +23,7 @@ set(ELLIPTIC_SOURCES
         ${ELLIPTIC_SOURCE_DIR}/ellipticSolve.cpp
         ${ELLIPTIC_SOURCE_DIR}/ellipticSolveSetup.cpp
         ${ELLIPTIC_SOURCE_DIR}/ellipticUpdatePCG.cpp
+        ${ELLIPTIC_SOURCE_DIR}/ellipticXXT.cpp
         ${ELLIPTIC_SOURCE_DIR}/ellipticZeroMean.cpp)
 
 set(PARALMOND_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/elliptic/amgSolver/parAlmond)
