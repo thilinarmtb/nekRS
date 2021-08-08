@@ -191,7 +191,7 @@ void sparse_cholesky_factor(uint n, const uint *Arp, const uint *Aj,
   const uint n_uints_as_dbls = (n*sizeof(uint)+sizeof(double)-1)/sizeof(double);
   buffer_reserve(buf,(n_uints_as_dbls+n)*sizeof(double));
   factor_symbolic(n,Arp,Aj,out,buf);
-  factor_numeric(n,Arp,Aj,A,out,buf->ptr,n_uints_as_dbls+(double*)buf->ptr);
+  factor_numeric(n,Arp,Aj,A,out,(uint *)buf->ptr,n_uints_as_dbls+(double*)buf->ptr);
 }
 
 void sparse_cholesky_free(struct sparse_cholesky *fac)
@@ -338,10 +338,10 @@ static void discover_sep_sizes(struct xxt *data,
   const uint n = dofa->n;
   float *v, *recv;
   unsigned i,lvl; uint j;
-  const struct dof *dof = dofa->ptr;
+  const struct dof *dof = (const struct dof *)dofa->ptr;
 
   buffer_reserve(buf,2*ns*sizeof(float));
-  v=buf->ptr, recv=v+ns;
+  v=(float *)buf->ptr, recv=v+ns;
 
   for(i=0;i<ns;++i) v[i]=0;
   for(j=0;j<n;++j) v[dof[j].level]+=1/(float)dof[j].count;
@@ -423,7 +423,7 @@ static void init_sep_ids(struct xxt *data, struct array *dofa, ulong *xid)
   const uint n=data->cn, *sep_size=data->sep_size;
   unsigned s=1;
   uint i, size;
-  const struct dof *dof = dofa->ptr;
+  const struct dof *dof = (const struct dof *)dofa->ptr;
   if(ns==1) return;
   size=sep_size[s];
   for(i=data->ln;i<n;++i) {
@@ -445,7 +445,7 @@ static void init_sep_ids(struct xxt *data, struct array *dofa, ulong *xid)
 static void find_perm_x2c(uint ln, uint cn, const struct array *dofc,
                           uint xn, const ulong *xid, sint *perm)
 {
-  const struct dof *dof = dofc->ptr, *dof_end = dof+cn;
+  const struct dof *dof = (const struct dof *)dofc->ptr, *dof_end = dof+cn;
   const ulong *xid_end = xid+xn; uint i=ln;
   dof+=ln;
   while(dof!=dof_end) {
@@ -623,8 +623,8 @@ static void discover_dofs(
   data->un = n;
   data->perm_u2c = perm = tmalloc(sint,n);
   data->cn = cn = unique_ids(n,id,perm,buf);
-  array_init(struct dof,dofa,cn), dofa->n=cn, dof=dofa->ptr;
-  buffer_reserve(buf,cn*sizeof(ulong)), bid=buf->ptr;
+  array_init(struct dof,dofa,cn), dofa->n=cn, dof=(struct dof *)dofa->ptr;
+  buffer_reserve(buf,cn*sizeof(ulong)), bid=(ulong *)buf->ptr;
   for(i=0;i<n;++i) if(perm[i]>=0) bid[perm[i]]=dof[perm[i]].id=id[i];
 
   gsh = gs_setup((const slong*)bid,cn,comm,0,gs_crystal_router,0);
@@ -763,7 +763,7 @@ static void orthogonalize(struct xxt *data, struct csr_mat *A_ss,
   allocate_X(data,perm_x2c);
 
   buffer_reserve(buf,(ln+2*sn+xn)*sizeof(double));
-  vl=buf->ptr, vs=vl+ln, Svs=vs+sn, vx=Svs+sn;
+  vl=(double *)buf->ptr, vs=vl+ln, Svs=vs+sn, vx=Svs+sn;
 
   if(data->null_space && xn) --xn;
   for(i=0;i<xn;++i) {
@@ -800,7 +800,7 @@ static void condense_matrix(struct array *mat, uint nr,
   struct yale_mat *p, *q;
   sarray_sort_2(struct yale_mat,mat->ptr,mat->n, i,0, j,0, buf);
 
-  p = mat->ptr;
+  p = (struct yale_mat *)mat->ptr;
   for(k=0;k+1<nz;++k,++p) if(p[0].i==p[1].i && p[0].j==p[1].j) break;
   if(++k<nz) {
     uint i=p->i,j=p->j;
@@ -817,7 +817,7 @@ static void condense_matrix(struct array *mat, uint nr,
   out->Aj = out->Arp+nr+1;
   out->A = tmalloc(double,mat->n);
   for(k=0;k<nr;++k) out->Arp[k]=0;
-  for(p=mat->ptr,k=0;k<nz;++k,++p)
+  for(p=(struct yale_mat *)mat->ptr,k=0;k<nz;++k,++p)
     out->Arp[p->i]++, out->Aj[k]=p->j, out->A[k]=p->v;
   nz=0; for(k=0;k<=nr;++k) { uint t=out->Arp[k]; out->Arp[k]=nz, nz+=t; }
 }
@@ -832,9 +832,9 @@ static void separate_matrix(
   uint k,n;
   struct array mat_ll, mat_sl, mat_ss;
   struct yale_mat *mll, *msl, *mss;
-  array_init(struct yale_mat,&mat_ll,2*nz), mll=mat_ll.ptr;
-  array_init(struct yale_mat,&mat_sl,2*nz), msl=mat_sl.ptr;
-  array_init(struct yale_mat,&mat_ss,2*nz), mss=mat_ss.ptr;
+  array_init(struct yale_mat,&mat_ll,2*nz), mll=(struct yale_mat *)mat_ll.ptr;
+  array_init(struct yale_mat,&mat_sl,2*nz), msl=(struct yale_mat *)mat_sl.ptr;
+  array_init(struct yale_mat,&mat_ss,2*nz), mss=(struct yale_mat *)mat_ss.ptr;
   for(k=0;k<nz;++k) {
     sint i=perm[Ai[k]], j=perm[Aj[k]];
     if(i<0 || j<0 || A[k]==0) continue;
@@ -880,7 +880,7 @@ struct xxt *crs_setup(
 
   perm_x2c = discover_sep_ids(data,&dofa,&buf);
   if(data->null_space) {
-    uint i; double count = 0; struct dof *dof = dofa.ptr;
+    uint i; double count = 0; struct dof *dof = (struct dof *)dofa.ptr;
     for(i=0;i<data->cn;++i) count+=1/(double)dof[i].count;
     count=1/sum(data,count,data->xn,0);
     data->share_weight=tmalloc(double,data->cn);
