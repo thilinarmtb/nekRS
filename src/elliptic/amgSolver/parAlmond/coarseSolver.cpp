@@ -34,6 +34,7 @@ SOFTWARE.
 #include "limits.h"
 #include "boomerAMG.h"
 #include "platform.hpp"
+#include "coarseXXT.h"
 
 namespace parAlmond {
 
@@ -44,7 +45,7 @@ coarseSolver::coarseSolver(setupAide options_, MPI_Comm comm_) {
 }
 
 int coarseSolver::getTargetSize() {
-  if(options.compareArgs("AMG SOLVER", "BOOMERAMG"))
+  if(options.compareArgs("AMG SOLVER", "BOOMERAMG") || options.compareArgs("AMG SOLVER", "XXT"))
     return INT_MAX;
   else 
     return 1000;
@@ -338,20 +339,21 @@ void coarseSolver::BoomerAMGSolve() {
   platform->timer.hostToc("BoomerAMGSolve");
 }
 void coarseSolver::solve(occa::memory o_rhs, occa::memory o_x) {
-
+  vectorDotStar(ogs->N, 1.0, ogs->o_invDegree, o_rhs, 0.0, o_Sx);
   if (gatherLevel) {
     //weight
-    vectorDotStar(ogs->N, 1.0, ogs->o_invDegree, o_rhs, 0.0, o_Sx);
     ogsGather(o_Gx, o_Sx, ogsDfloat, ogsAdd, ogs);
     if(N)
       o_Gx.copyTo(rhsLocal, N*sizeof(dfloat), 0);
   } else {
     if(N)
-      o_rhs.copyTo(rhsLocal, N*sizeof(dfloat), 0);
+      o_Sx.copyTo(rhsLocal, N*sizeof(dfloat), 0);
   }
 
-  if (options.compareArgs("AMG SOLVER", "BOOMERAMG")){
+  if (options.compareArgs("AMG SOLVER", "BOOMERAMG")) {
     BoomerAMGSolve(); 
+  } else if (options.compareArgs("AMG SOLVER", "XXT")) {
+    xxt_solve(xLocal, rhsLocal);
   } else {
     //gather the full vector
     MPI_Allgatherv(rhsLocal,             N,                MPI_DFLOAT,

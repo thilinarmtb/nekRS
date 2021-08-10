@@ -86,7 +86,7 @@ void Precon(solver_t *M, occa::memory o_x, occa::memory o_rhs) {
   M->levels[0]->o_x   = o_x;
   M->levels[0]->o_rhs = o_rhs;
 
-  if       ((M->exact)&&(M->ktype==PCG)){
+  if ((M->exact)&&(M->ktype==PCG)){
     M->device_pcg(1000,1e-8);
   } else if((M->exact)&&(M->ktype==GMRES)){
     M->device_pgmres(1000,1e-8);

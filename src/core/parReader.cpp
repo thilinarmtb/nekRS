@@ -655,7 +655,9 @@ setupAide parRead(void *ppar, std::string setupFile, MPI_Comm comm) {
 
     string p_amgsolver;
     par->extract("pressure", "amgsolver", p_amgsolver);
-    if (p_amgsolver == "paralmond")
+    if (p_amgsolver == "xxt")
+      options.setArgs("AMG SOLVER", "XXT");
+    else if (p_amgsolver == "paralmond")
       exit("Unknown PRESSURE:amgSolver!", EXIT_FAILURE);
     // options.setArgs("AMG SOLVER", "PARALMOND");
 

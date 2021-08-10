@@ -18,6 +18,8 @@ filterModes = 1
 
 [PRESSURE]
 residualTol = 1e-04
+amgsolver = xxt
+galerkincoarseoperator=true
 
 [VELOCITY]
 boundaryTypeMap = inlet, outlet, wall, slipY, slipZ

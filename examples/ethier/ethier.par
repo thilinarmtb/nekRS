@@ -11,6 +11,9 @@ writeInterval = 0.1
 
 [PRESSURE]
 residualTol = 1e-08
+residualProj = false
+amgsolver = xxt
+galerkincoarseoperator = true
 
 [VELOCITY]
 boundaryTypeMap = inlet 

@@ -5,12 +5,12 @@
 #include <float.h>
 #include <string.h>
 #include <math.h>
-#include "gslib.h"
+#include <coarseXXT.h>
 
-#define crs_setup PREFIXED_NAME(crs_xxt_setup)
-#define crs_solve PREFIXED_NAME(crs_xxt_solve)
-#define crs_stats PREFIXED_NAME(crs_xxt_stats)
-#define crs_free  PREFIXED_NAME(crs_xxt_free )
+#define crs_setup PREFIXED_NAME(nekrs_crs_xxt_setup)
+#define crs_solve PREFIXED_NAME(nekrs_crs_xxt_solve)
+#define crs_stats PREFIXED_NAME(nekrs_crs_xxt_stats)
+#define crs_free  PREFIXED_NAME(nekrs_crs_xxt_free )
 
 /*
   portable log base 2
@@ -856,7 +856,7 @@ static void separate_matrix(
   array_free(&mat_ss);
 }
 
-struct xxt *crs_setup(
+static struct xxt *crs_setup(
   uint n, const ulong *id,
   uint nz, const uint *Ai, const uint *Aj, const double *A,
   uint null_space, const struct comm *comm)
@@ -918,7 +918,7 @@ struct xxt *crs_setup(
   return data;
 }
 
-void crs_solve(double *x, struct xxt *data, const double *b)
+static void crs_solve(double *x, struct xxt *data, const double *b)
 {
   uint cn=data->cn, un=data->un, ln=data->ln, sn=data->sn, xn=data->xn;
   double *vl=data->vl, *vc=data->vc, *vx=data->vx;
@@ -958,7 +958,7 @@ void crs_solve(double *x, struct xxt *data, const double *b)
   }
 }
 
-void crs_stats(struct xxt *data)
+static void crs_stats(struct xxt *data)
 {
   int a,b; uint xcol;
   if(data->comm.id==0) {
@@ -983,7 +983,7 @@ void crs_stats(struct xxt *data)
   if(data->comm.id==0) printf("xxt: max X size = %d bytes\n",a);
 }
 
-void crs_free(struct xxt *data)
+static void crs_free(struct xxt *data)
 {
   comm_free(&data->comm);
   free(data->pother);
@@ -996,4 +996,103 @@ void crs_free(struct xxt *data)
   free(data->Xp); free(data->X);
   free(data->vl);
   free(data);
+}
+
+#define XXT_GS 0
+
+struct gid {
+  ulong id;
+  uint idx;
+};
+
+/* sorts an array of ids, removes 0's and duplicates;
+   and retrun an array with unique non-zero ids */
+static uint unique_ids_array(uint n, const ulong *id, struct array *ugids,
+                             buffer *buf)
+{
+  struct gid t;
+  uint *p, i, un = 0; ulong last = 0;
+  p = sortp_long(buf,0, id,n,sizeof(ulong));
+  for(i = 0; i < n; ++i) {
+    uint j = p[i]; ulong v = id[j];
+    if (v != 0) {
+      if (v != last) {
+        t.id = v;
+        t.idx = i;
+        array_cat(struct gid, ugids, &t, 1);
+        last = v, ++un;
+      }
+    }
+  }
+  buf->n=0;
+  return un;
+}
+
+static struct xxt *crs_nekrs;
+
+void xxt_setup(parAlmond::solver_t* M,
+               uint n,
+               const ulong *id, 
+               uint nnz,
+               const uint* Ai,
+               const uint* Aj,
+               const double* A,
+               uint null_space)
+{
+  struct comm c;
+  comm_init(&c, M->comm);
+
+  int rank, size;
+  rank = c.id;
+  size = c.np;
+
+  if (rank == 0)
+    printf("Setting up XXT ...");
+  fflush(stdout);
+
+#ifdef XXT_GS
+  buffer buf;
+  buffer_init(&buf, 1024);
+
+  struct array ugids;
+  array_init(struct gid, &ugids, 10);
+#endif
+
+  double start = comm_time();
+
+  M->coarseLevel = new parAlmond::coarseSolver(M->options, M->comm);
+  crs_nekrs = crs_setup(n, id, nnz, Ai, Aj, A, null_space, &c);
+  crs_stats(crs_nekrs);
+
+#ifdef XXT_GS
+  uint un = unique_ids_array(n, id, &ugids, &buf);
+  if (rank == 0)
+    printf("un = %d\n");
+  fflush(stdout);
+#endif
+
+  uint N = M->coarseLevel->N = crs_nekrs->un;
+  M->coarseLevel->xLocal = (double *) tcalloc(double, N);
+  M->coarseLevel->rhsLocal = (double *) tcalloc(double, N);
+
+  M->baseLevel = M->numLevels;
+  M->numLevels++;
+
+  comm_barrier(&c);
+  if (rank == 0)
+    printf("done (%gs)\n", comm_time() - start);
+  fflush(stdout);
+
+#ifdef XXT_GS
+  array_free(&ugids);
+  buffer_free(&buf);
+#endif
+}
+
+void xxt_solve(double *x, double *rhs) {
+  crs_solve(x, crs_nekrs, rhs);
+}
+
+void xxt_free() {
+  crs_free(crs_nekrs);
 }

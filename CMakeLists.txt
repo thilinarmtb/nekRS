@@ -268,6 +268,7 @@ target_include_directories(nekrs-lib
   PRIVATE
   ${ELLIPTIC_SOURCE_DIR}/amgSolver/hypre
   ${ELLIPTIC_SOURCE_DIR}/amgSolver/amgx
+  ${ELLIPTIC_SOURCE_DIR}/XXT
   ${PARALMOND_SOURCE_DIR}
   ${HYPRE_SOURCE_DIR}/src
   ${HYPRE_SOURCE_DIR}/src/utilities
