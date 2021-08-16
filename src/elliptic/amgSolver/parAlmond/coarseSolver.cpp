@@ -340,20 +340,21 @@ void coarseSolver::BoomerAMGSolve() {
 }
 void coarseSolver::solve(occa::memory o_rhs, occa::memory o_x) {
   vectorDotStar(ogs->N, 1.0, ogs->o_invDegree, o_rhs, 0.0, o_Sx);
+
   if (gatherLevel) {
     //weight
     ogsGather(o_Gx, o_Sx, ogsDfloat, ogsAdd, ogs);
-    if(N)
+    if(N && !options.compareArgs("AMG SOLVER", "XXT"))
       o_Gx.copyTo(rhsLocal, N*sizeof(dfloat), 0);
   } else {
-    if(N)
+    if(N && !options.compareArgs("AMG SOLVER", "XXT"))
       o_Sx.copyTo(rhsLocal, N*sizeof(dfloat), 0);
   }
 
   if (options.compareArgs("AMG SOLVER", "BOOMERAMG")) {
     BoomerAMGSolve(); 
   } else if (options.compareArgs("AMG SOLVER", "XXT")) {
-    xxt_solve(xLocal, rhsLocal);
+    xxt_solve(o_x, o_Sx);
   } else {
     //gather the full vector
     MPI_Allgatherv(rhsLocal,             N,                MPI_DFLOAT,
@@ -370,11 +371,11 @@ void coarseSolver::solve(occa::memory o_rhs, occa::memory o_x) {
   }
 
   if (gatherLevel) {
-    if(N)
+    if(N && !options.compareArgs("AMG SOLVER", "XXT"))
       o_Gx.copyFrom(xLocal, N*sizeof(dfloat), 0);
     ogsScatter(o_x, o_Gx, ogsDfloat, ogsAdd, ogs);
   } else {
-    if(N)
+    if(N && !options.compareArgs("AMG SOLVER", "XXT"))
       o_x.copyFrom(xLocal, N*sizeof(dfloat), 0);
   }
 }

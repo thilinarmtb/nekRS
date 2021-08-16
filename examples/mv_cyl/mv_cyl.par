@@ -1,3 +1,6 @@
+[OCCA]
+backend = serial
+
 [GENERAL]
 polynomialOrder = 7
 stopAt = numSteps
@@ -15,6 +18,8 @@ stressFormulation = true
 [PRESSURE]
 residualTol = 1e-8
 residualProj = false
+amgsolver = xxt
+galerkincoarseoperator = true
 
 [VELOCITY]
 residualTol = 1e-12

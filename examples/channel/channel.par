@@ -1,3 +1,6 @@
+[OCCA]
+backend = Serial
+
 [GENERAL] 
 polynomialOrder = 7
 #startFrom = "restart.fld"
@@ -12,6 +15,8 @@ stressFormulation = true # required for variable viscosity
 
 [PRESSURE]
 residualTol = 1e-08
+amgsolver = xxt
+galerkincoarseoperator = true
 
 [VELOCITY]
 residualTol = 1e-12

@@ -2,6 +2,7 @@
 #define _NEKRS_ELLIPTIC_XXT_H_
 
 #include "elliptic.h"
+#include "platform.hpp"
 #include "gslib.h"
 
 int setup_h1_crs(uint *ntot, ulong **gids_, uint *nnz, uint **ia_, uint **ja_,
@@ -18,6 +19,8 @@ void xxt_setup(parAlmond::solver_t* M,
                uint null_space);
 
 void xxt_solve(double *x, double *rhs);
+
+void xxt_solve(occa::memory o_x, occa::memory o_rhs);
 
 void xxt_free();
 

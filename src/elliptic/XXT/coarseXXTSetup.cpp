@@ -6,6 +6,7 @@ int check_alloc_(void *ptr, std::string file, int line) {
     printf("check_alloc failure: %s:%d\n", file.c_str(), line);
     return 1;
   }
+  return 0;
 }
 
 #define check_alloc(ptr) check_alloc_(ptr, __FILE__, __LINE__)
@@ -146,14 +147,6 @@ int setup_h1_crs(uint *ntot, ulong **gids_, uint *nnz, uint **ia_, uint **ja_,
   uint *ja = *ja_ = tcalloc(uint, *nnz);
   check_alloc(ja);
   set_mat_ij(ia, ja, nc, nelt);
-
-#if 0
-  printf("nelt = %d nc = %d nf = %d\n", nelt, nc, nf);
-  for (j = 0; j < *ntot; j++)
-    printf("gid[%d] = %lld\n", j, gids[j]);
-  for (j = 0; j < *nnz; j++)
-    printf("entry %d : %u %u %lf\n", j, ia[j], ja[j], a[j]);
-#endif
 
   return 0;
 }

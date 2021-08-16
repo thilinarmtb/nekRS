@@ -1,3 +1,6 @@
+[OCCA]
+backend = Serial
+
 [GENERAL] 
 #startFrom = "restart.fld"
 polynomialOrder = 7
@@ -8,6 +11,8 @@ writeInterval = 100
 
 [PRESSURE]
 residualTol = 1e-06
+amgsolver = xxt
+galerkincoarseoperator = true
 
 [VELOCITY]
 boundaryTypeMap = v, O, W

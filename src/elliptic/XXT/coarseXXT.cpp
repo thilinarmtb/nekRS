@@ -5,7 +5,9 @@
 #include <float.h>
 #include <string.h>
 #include <math.h>
+
 #include <coarseXXT.h>
+#include <vector>
 
 #define crs_setup PREFIXED_NAME(nekrs_crs_xxt_setup)
 #define crs_solve PREFIXED_NAME(nekrs_crs_xxt_solve)
@@ -998,37 +1000,254 @@ static void crs_free(struct xxt *data)
   free(data);
 }
 
-#define XXT_GS 0
+/*
+  XXT port to GPUs using OCCA
+*/
 
-struct gid {
-  ulong id;
-  uint idx;
+struct xxt_device {
+  struct xxt *crs;
+  /* This is temporary, will be removed soon */
+  double *h_x, *h_b;
+
+  /* u2c gather ids and offsets */
+  occa::memory ids, offsets, mask_ids;
+
+  /* All matrix */
+
+  /* Asl matrix */
+  occa::memory o_Arp, o_Aj, o_A;
+
+  /* X */
+  occa::memory o_X, o_Xp;
+
+  /* Execution buffers */
+  occa::memory o_vl;
+  occa::memory o_vc;
+  occa::memory o_vx;
+  occa::memory o_combuf;
+
+  occa::kernel u2c;
+  occa::kernel c2u;
+  occa::kernel apply_m_Asl;
+  occa::kernel apply_p_Als;
+  occa::kernel apply_Xt;
+  occa::kernel apply_X;
 };
 
-/* sorts an array of ids, removes 0's and duplicates;
-   and retrun an array with unique non-zero ids */
-static uint unique_ids_array(uint n, const ulong *id, struct array *ugids,
-                             buffer *buf)
-{
-  struct gid t;
-  uint *p, i, un = 0; ulong last = 0;
-  p = sortp_long(buf,0, id,n,sizeof(ulong));
-  for(i = 0; i < n; ++i) {
-    uint j = p[i]; ulong v = id[j];
-    if (v != 0) {
-      if (v != last) {
-        t.id = v;
-        t.idx = i;
-        array_cat(struct gid, ugids, &t, 1);
-        last = v, ++un;
-      }
+static std::vector<struct xxt_device> handles;
+
+struct lid {
+  uint uid;
+  uint cid;
+};
+
+static void allocate_u2c_ids_offsets(struct xxt_device *xxtd) {
+  sint *perm_u2c = xxtd->crs->perm_u2c;
+  uint un = xxtd->crs->un;
+  uint cn = xxtd->crs->cn;
+
+  struct array ids, masks;
+  array_init(struct lid, &ids, un);
+  array_init(struct lid, &masks, 10);
+
+  struct lid id;
+  uint i;
+  for (i = 0; i < un; i++) {
+    id.uid = i;
+    if (perm_u2c[i] >= 0) {
+      id.cid = perm_u2c[i];
+      array_cat(struct lid, &ids, &id, 1);
+    } else {
+      array_cat(struct lid, &masks, &id, 1);
     }
   }
-  buf->n=0;
-  return un;
+
+  if (ids.n == 0)
+    return;
+
+  buffer buf;
+  buffer_init(&buf, 1024);
+  sarray_sort(struct lid, ids.ptr, ids.n, cid, 0, &buf);
+  buffer_free(&buf);
+
+  struct lid *ptr = (struct lid *)ids.ptr;
+  uint n = 1;
+  for (i = 1; i < ids.n; i++) {
+    if (ptr[i].cid != ptr[i - 1].cid)
+      n++;
+  }
+  n++;
+
+  dlong *lids = tcalloc(dlong, ids.n);
+  dlong *loffs = tcalloc(dlong, n);
+
+  loffs[0] = 0;
+  lids[0] = ptr[0].uid;
+  n = 1;
+  for (i = 1; i < ids.n; i++) {
+    lids[i] = ptr[i].uid;
+    if (ptr[i].cid != ptr[i - 1].cid) {
+      loffs[n] = i;
+      n++;
+    }
+  }
+  loffs[n++] = ids.n;
+ 
+  xxtd->ids = platform->device.malloc(sizeof(dlong) * ids.n, lids);
+  xxtd->offsets = platform->device.malloc(sizeof(dlong) * n, loffs);
+
+  free(lids);
+  free(loffs);
+
+  dlong *mids = tcalloc(dlong, masks.n);
+  ptr = (struct lid *)masks.ptr;
+  for (i = 0; i < masks.n; i++)
+    mids[i] = ptr[i].uid;
+
+  xxtd->mask_ids = platform->device.malloc(sizeof(dlong) * masks.n, mids);
+
+  free(mids);
+
+  array_free(&ids);
+  array_free(&masks);
 }
 
-static struct xxt *crs_nekrs;
+static void allocate_device_arrays(struct xxt_device *xxtd) {
+  struct xxt *crsx = xxtd->crs;
+
+  /* Asl */
+  xxtd->o_Arp = platform->device.malloc((crsx->sn + 1) * sizeof(uint),
+                                        crsx->A_sl.Arp);
+  xxtd->o_Aj = platform->device.malloc(crsx->A_sl.Arp[crsx->sn] *
+                                       sizeof(uint), crsx->A_sl.Aj);
+  xxtd->o_A = platform->device.malloc(crsx->A_sl.Arp[crsx->sn] * sizeof(dfloat),
+                                      crsx->A_sl.A);
+
+
+  /* X */
+  uint xn = crsx->xn;
+  if (xn > 0 && crsx->null_space) --xn;
+  xxtd->o_Xp = platform->device.malloc((xn + 1) * sizeof(uint), crsx->Xp);
+  xxtd->o_X = platform->device.malloc(crsx->Xp[xn] * sizeof(dfloat), crsx->X);
+
+  /* Temps -- get rid of this */
+  xxtd->h_x = (dfloat *) tcalloc(dfloat, crsx->un);
+  xxtd->h_b = (dfloat *) tcalloc(dfloat, crsx->un);
+
+  /* Execution buffers -- can be combined into one large array */
+  xxtd->o_vl = platform->device.malloc(crsx->ln * sizeof(dfloat), crsx->vl);
+  xxtd->o_vc = platform->device.malloc(crsx->cn * sizeof(dfloat), crsx->vc);
+  xxtd->o_vx = platform->device.malloc(crsx->xn * sizeof(dfloat), crsx->vx);
+  xxtd->o_combuf = platform->device.malloc(crsx->xn * sizeof(dfloat),
+                                            crsx->combuf);
+
+}
+
+static void build_kernels(struct xxt_device *xxtd) {
+  std::string file_name;
+  file_name.assign(getenv("NEKRS_INSTALL_DIR"));
+  file_name += "/okl/elliptic/XXT/coarseXXT.okl";
+
+  occa::properties kinfo = platform->kernelInfo;
+
+  xxtd->u2c = platform->device.buildKernel(file_name, "u2c", kinfo);
+  xxtd->c2u = platform->device.buildKernel(file_name, "c2u", kinfo);
+  xxtd->apply_m_Asl = platform->device.buildKernel(file_name, "apply_m_Asl",
+                                            kinfo);
+  xxtd->apply_p_Als = platform->device.buildKernel(file_name, "apply_p_Als",
+                                            kinfo);
+  xxtd->apply_Xt = platform->device.buildKernel(file_name, "apply_Xt", kinfo);
+  xxtd->apply_X = platform->device.buildKernel(file_name, "apply_X", kinfo);
+}
+
+static void crs_solve_device(occa::memory o_x, struct xxt_device *xxtd,
+                             occa::memory o_b)
+{
+  struct xxt *data = xxtd->crs;
+  uint cn=data->cn, un=data->un, ln=data->ln, sn=data->sn, xn=data->xn;
+  double *vl=data->vl, *vc=data->vc, *vx=data->vx;
+
+  double *x = xxtd->h_x;
+  double *b = xxtd->h_b;
+
+  uint i;
+#if 0
+  o_b.copyTo(b, data->un * sizeof(dfloat), 0);
+
+  for(i=0;i<cn;++i) vc[i]=0;
+  for(i=0;i<un;++i) {
+    sint p=data->perm_u2c[i];
+    if(p>=0) vc[p]+=b[i];
+  }
+#else
+  xxtd->u2c(data->cn, xxtd->ids, xxtd->offsets, o_b, xxtd->o_vc);
+  xxtd->o_vc.copyTo(vc, data->cn * sizeof(dfloat), 0);
+#endif
+
+  if(xn>0 && (!data->null_space || xn>1)) {
+    if(data->null_space) --xn;
+    sparse_cholesky_solve(vc,&data->fac_A_ll,vc);
+
+#if 0
+    apply_m_Asl(vc+ln,sn, data, vc);
+#else
+    xxtd->o_vc.copyFrom(vc, data->cn * sizeof(dfloat), 0);
+    xxtd->apply_m_Asl(ln, sn, xxtd->o_Arp, xxtd->o_Aj, xxtd->o_A, xxtd->o_vc);
+    xxtd->o_vc.copyTo(vc, data->cn * sizeof(dfloat), 0);
+#endif
+
+#if 0
+    apply_Xt(vx,xn, data, vc+ln);
+#else
+    xxtd->o_vc.copyFrom(vc, data->cn * sizeof(dfloat), 0);
+    xxtd->apply_Xt(xn, data->ln, xxtd->o_vc, xxtd->o_X, xxtd->o_Xp, xxtd->o_vx);
+    xxtd->o_vx.copyTo(vx, data->xn * sizeof(dfloat), 0);
+#endif
+
+    apply_QQt(data,vx,xn,0);
+
+#if 1
+    apply_X(vc+ln,sn, data, vx,xn);
+#else
+    xxtd->o_vx.copyFrom(vx, data->xn * sizeof(dfloat), 0);
+    // xxtd->apply_X();
+    xxtd->o_vc.copyTo(vc, data->cn * sizeof(dfloat), 0);
+#endif
+
+    for(i=0;i<ln;++i) vl[i]=0;
+
+#if 0
+    apply_p_Als(vl, data, vc+ln,sn);
+#else
+    xxtd->o_vl.copyFrom(vl, data->ln * sizeof(dfloat), 0);
+    xxtd->o_vc.copyFrom(vc, data->cn * sizeof(dfloat), 0);
+    xxtd->apply_p_Als(ln, sn, xxtd->o_Arp, xxtd->o_Aj, xxtd->o_A, xxtd->o_vc,
+                      xxtd->o_vl);
+    xxtd->o_vl.copyTo(vl, data->ln * sizeof(dfloat), 0);
+#endif
+
+    sparse_cholesky_solve(vl,&data->fac_A_ll,vl);
+    for(i=0;i<ln;++i) vc[i]-=vl[i];
+  } else {
+    sparse_cholesky_solve(vc,&data->fac_A_ll,vc);
+    if(data->null_space) {
+      if(xn==0) vc[ln-1]=0;
+      else if(sn==1) vc[ln]=0;
+    }
+  }
+  if(data->null_space) {
+    double s=0;
+    for(i=0;i<cn;++i) s+=data->share_weight[i]*vc[i];
+    s = sum(data,s,data->xn,0);
+    for(i=0;i<cn;++i) vc[i]-=s;
+  }
+  for(i=0;i<un;++i) {
+    sint p=data->perm_u2c[i];
+    x[i] = p>=0 ? vc[p] : 0;
+  }
+
+  o_x.copyFrom(x, data->un * sizeof(dfloat), 0);
+}
 
 void xxt_setup(parAlmond::solver_t* M,
                uint n,
@@ -1050,49 +1269,45 @@ void xxt_setup(parAlmond::solver_t* M,
     printf("Setting up XXT ...");
   fflush(stdout);
 
-#ifdef XXT_GS
-  buffer buf;
-  buffer_init(&buf, 1024);
-
-  struct array ugids;
-  array_init(struct gid, &ugids, 10);
-#endif
-
   double start = comm_time();
 
+  /* Setup XXT on host */
+  struct xxt_device handle;
+  struct xxt *crsx = handle.crs = crs_setup(n, id, nnz, Ai, Aj, A, null_space,
+                                            &c);
+  crs_stats(crsx);
+
+  /* Setup parAlmond coarse solver */
   M->coarseLevel = new parAlmond::coarseSolver(M->options, M->comm);
-  crs_nekrs = crs_setup(n, id, nnz, Ai, Aj, A, null_space, &c);
-  crs_stats(crs_nekrs);
-
-#ifdef XXT_GS
-  uint un = unique_ids_array(n, id, &ugids, &buf);
-  if (rank == 0)
-    printf("un = %d\n");
-  fflush(stdout);
-#endif
-
-  uint N = M->coarseLevel->N = crs_nekrs->un;
-  M->coarseLevel->xLocal = (double *) tcalloc(double, N);
-  M->coarseLevel->rhsLocal = (double *) tcalloc(double, N);
-
+  M->coarseLevel->N = crsx->un;
+  M->coarseLevel->xLocal = M->coarseLevel->rhsLocal = NULL;
   M->baseLevel = M->numLevels;
   M->numLevels++;
 
-  comm_barrier(&c);
-  if (rank == 0)
-    printf("done (%gs)\n", comm_time() - start);
-  fflush(stdout);
+  /* Setup XXT on device */
+  allocate_u2c_ids_offsets(&handle);
+  allocate_device_arrays(&handle);
+  build_kernels(&handle);
+  handles.push_back(handle);
 
-#ifdef XXT_GS
-  array_free(&ugids);
-  buffer_free(&buf);
-#endif
+  comm_barrier(&c);
+
+  if (rank == 0)
+    printf("done (%gs) ln = %d sn = %d cn = %d xn = %d\n", comm_time() - start,
+           crsx->ln, crsx->sn, crsx->cn, crsx->xn);
+  fflush(stdout);
 }
 
 void xxt_solve(double *x, double *rhs) {
-  crs_solve(x, crs_nekrs, rhs);
+  crs_solve(x, handles[0].crs, rhs);
+}
+
+void xxt_solve(occa::memory o_x, occa::memory o_rhs) {
+  crs_solve_device(o_x, &handles[0], o_rhs);
 }
 
 void xxt_free() {
-  crs_free(crs_nekrs);
+  crs_free(handles[0].crs);
+  free(handles[0].h_x);
+  free(handles[0].h_b);
 }

@@ -1,3 +1,6 @@
+[OCCA]
+backend = Serial
+
 [GENERAL]
 #verbose = true 
 polynomialOrder = 9
@@ -12,7 +15,8 @@ writeInterval = 0.1
 [PRESSURE]
 residualTol = 1e-08
 residualProj = false
-amgsolver = xxt
+#amgsolver = xxt
+amgsolver = boomeramg
 galerkincoarseoperator = true
 
 [VELOCITY]
