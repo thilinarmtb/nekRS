@@ -5,8 +5,7 @@
 #include "elliptic.h"
 
 int jl_setup_aux(uint *ntot, ulong **gids_, uint *nnz, uint **ia_, uint **ja_,
-                 double **a_, elliptic_t *elliptic, elliptic_t *ellipticf,
-                 dfloat lambda);
+                 double **a_, elliptic_t *elliptic, elliptic_t *ellipticf);
 
 int jl_setup(uint type, parAlmond::solver_t* M, uint n, const ulong *id,
              uint nnz, const uint* Ai, const uint* Aj, const double* A,

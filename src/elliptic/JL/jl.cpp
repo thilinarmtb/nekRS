@@ -54,17 +54,17 @@ static int gen_crs_basis(double *b, int j_, dfloat *z, int Nq, int Np) {
   return 0;
 }
 
-static int get_local_crs_galerkin(double *a, int nc, mesh_t *meshf,
-                           occa::kernel &ax_kernel, dfloat lambda) {
-  int nelt = meshf->Nelements;
-  int Np = meshf->Np;
+static int get_local_crs_galerkin(double *a, int nc, mesh_t *mf,
+                                  elliptic_t * ef) {
+  int nelt = mf->Nelements;
+  int Np = mf->Np;
   size_t size = nelt * Np;
 
   double *b = tcalloc(double, nc * Np);
   check_alloc(b);
   int j;
   for (j = 0; j < nc; j++)
-    gen_crs_basis(b, j, meshf->gllz, meshf->Nq, meshf->Np);
+    gen_crs_basis(b, j, mf->gllz, mf->Nq, mf->Np);
 
   double *u = tcalloc(double, size);
   check_alloc(u);
@@ -81,7 +81,8 @@ static int get_local_crs_galerkin(double *a, int nc, mesh_t *meshf,
 
     // call Ax
     o_u.copyFrom(u);
-    ax_kernel(nelt, meshf->o_ggeo, meshf->o_D, meshf->o_DT, lambda, o_u, o_w);
+    ellipticAx(ef, mf->NglobalGatherElements, mf->o_globalGatherElementList, o_u, o_w, dfloatString);
+    ellipticAx(ef, mf->NlocalGatherElements, mf->o_localGatherElementList, o_u, o_w, dfloatString);
     o_w.copyTo(w);
 
     for (e = 0; e < nelt; e++)
@@ -113,15 +114,13 @@ static void set_mat_ij(uint *ia, uint *ja, int nc, int nelt) {
 }
 
 int jl_setup_aux(uint *ntot, ulong **gids_, uint *nnz, uint **ia_, uint **ja_,
-                 double **a_, elliptic_t *elliptic, elliptic_t *ellipticf,
-                 dfloat lambda) {
+                 double **a_, elliptic_t *elliptic, elliptic_t *ellipticf) {
   mesh_t *mesh = elliptic->mesh;
   mesh_t *meshf = ellipticf->mesh;
   assert(mesh->Nelements == meshf->Nelements);
   int nelt = meshf->Nelements;
 
   int nc = mesh->Np;
-  int nf = meshf->Np;
 
   /* Set global ids: copy and apply the mask */
   *ntot = nelt * nc;
@@ -132,16 +131,20 @@ int jl_setup_aux(uint *ntot, ulong **gids_, uint *nnz, uint **ia_, uint **ja_,
   for (j = 0; j < nelt * nc; j++)
     gids[j] = mesh->globalIds[j];
 
-  int n;
-  for (n = 0; n < elliptic->Nmasked; n++)
-    gids[elliptic->maskIds[n]] = 0;
+  if (elliptic->Nmasked) {
+    dlong* maskIds = (dlong*) calloc(elliptic->Nmasked, sizeof(dlong));
+    elliptic->o_maskIds.copyTo(maskIds, elliptic->Nmasked * sizeof(dlong));
+    for (int n = 0; n < elliptic->Nmasked; n++)
+      gids[maskIds[n]] = 0;
+    free(maskIds);
+  }
 
   /* Set coarse matrix */
   *nnz = nc * nc * nelt;
   double *a = *a_ = tcalloc(double, *nnz);
   check_alloc(a);
 
-  get_local_crs_galerkin(a, nc, meshf, ellipticf->AxKernel, lambda);
+  get_local_crs_galerkin(a, nc, meshf, ellipticf);
 
   uint *ia = *ia_ = tcalloc(uint, *nnz);
   check_alloc(ia);
@@ -201,22 +204,21 @@ int jl_setup(uint type, parAlmond::solver_t* M, uint n, const ulong *id,
       break;
     case 1:
       err = amg_setup(M, n, id, nnz, Ai, Aj, A, null, verbose);
-      MPI_Barrier(M->comm);
-      MPI_Allreduce(&err, &errg, 1, MPI_INT, MPI_MAX, M->comm);
-      if (errg) {
-        if (rank == 0)
-          nekamg_setup("crs_amg_data", coarse, interp, tol, serial);
-        MPI_Barrier(M->comm);
-        err = amg_setup(M, n, id, nnz, Ai, Aj, A, null, verbose);
-      }
+      // if (errg) {
+      //   if (rank == 0)
+      //     nekamg_setup("crs_amg_data", coarse, interp, tol, serial);
+      //   MPI_Barrier(M->comm);
+      //   err = amg_setup(M, n, id, nnz, Ai, Aj, A, null, verbose);
+      // }
       break;
     default:
       break;
   }
 
   MPI_Comm_free(&serial);
+  MPI_Allreduce(&err, &errg, 1, MPI_INT, MPI_MAX, M->comm);
 
-  return err;
+  return errg;
 }
 
 int jl_solve(occa::memory o_x, occa::memory o_rhs) {

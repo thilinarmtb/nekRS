@@ -161,7 +161,8 @@ void ellipticMultiGridSetup(elliptic_t* elliptic_, precon_t* precon)
   if(options.compareArgs("MULTIGRID COARSE SOLVE", "TRUE")){
     if(options.compareArgs("MULTIGRID COARSE SEMFEM", "TRUE")){
       ellipticSEMFEMSetup(ellipticCoarse);
-      precon->parAlmond->coarseLevel = new parAlmond::coarseSolver(precon->parAlmond->options, platform->comm.mpiComm);
+      precon->parAlmond->coarseLevel = new parAlmond::coarseSolver(precon->parAlmond->options,
+                                                                   platform->comm.mpiComm);
       precon->parAlmond->coarseLevel->useSEMFEM = true;
       precon->parAlmond->coarseLevel->semfemSolver = [ellipticCoarse](occa::memory o_rhs, occa::memory o_x)
       {
@@ -182,11 +183,14 @@ void ellipticMultiGridSetup(elliptic_t* elliptic_, precon_t* precon)
         ellipticBuildContinuous(ellipticCoarse, &coarseA, &nnzCoarseA,&coarseogs,
                                 coarseGlobalStarts);
 
-      if (options.compareArgs("AMG SOLVER", "JL_XXT") || options.compareArgs("AMG SOLVER", "JL_AMG")) {
+      if (options.compareArgs("AMG SOLVER", "JL_XXT") ||
+          options.compareArgs("AMG SOLVER", "JL_AMG")) {
         if (!options.compareArgs("GALERKIN COARSE OPERATOR", "TRUE")) {
-          printf("XXT and AMG have to be used with Galerkin coarse operator\n");
+          if (platform->comm.mpiRank == 0)
+            printf("XXT and AMG have to be used with Galerkin coarse operator\n");
           exit(EXIT_FAILURE);
         }
+
         uint ntot, nnz, *ia, *ja;
         ulong *gids;
         double *a;
@@ -277,7 +281,12 @@ void ellipticMultiGridSetup(elliptic_t* elliptic_, precon_t* precon)
           //this level is the base
           parAlmond::coarseSolver* coarseLevel = precon->parAlmond->coarseLevel;
 
-          coarseLevel->gatherLevel = true;
+          if (options.compareArgs("AMG SOLVER", "JL_XXT") || options.compareArgs("AMG SOLVER", "JL_AMG")) {
+            coarseLevel->gatherLevel = false;
+          } else {
+            coarseLevel->gatherLevel = true;
+          }
+
           coarseLevel->ogs = ellipticCoarse->ogs;
           coarseLevel->Gx = (dfloat*) calloc(coarseLevel->ogs->Ngather,sizeof(dfloat));
           coarseLevel->Sx = (dfloat*) calloc(ellipticCoarse->mesh->Np * ellipticCoarse->mesh->Nelements,

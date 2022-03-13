@@ -1248,7 +1248,7 @@ static void allocate_device_arrays(struct xxt_device *xxtd) {
 static void build_kernels(struct xxt_device *xxtd) {
   std::string file_name;
   file_name.assign(getenv("NEKRS_INSTALL_DIR"));
-  file_name += "/okl/elliptic/XXT/coarseXXT.okl";
+  file_name += "/okl/elliptic/JL/coarseXXT.okl";
 
   occa::properties kinfo = platform->kernelInfo;
 

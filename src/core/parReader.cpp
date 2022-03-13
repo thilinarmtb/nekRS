@@ -508,8 +508,8 @@ void parseCoarseSolver(const int rank, setupAide &options, inipp::Ini *par, std:
     {"fp64"},
     {"cpu"},
     {"gpu"},
-    {"jl_amg"},
-    {"jl_xxt"}
+    {"jlamg"},
+    {"jlxxt"}
   };
 
   // solution methods
@@ -527,19 +527,21 @@ void parseCoarseSolver(const int rank, setupAide &options, inipp::Ini *par, std:
     options.setArgs(parSectionName + "SEMFEM SOLVER PRECISION", "FP32");
     options.setArgs("AMG SOLVER LOCATION", "GPU");
   }
-  else if(p_coarseSolver.find("JL_AMG") != std::string::npos){
+  else if(p_coarseSolver.find("jlamg") != std::string::npos){
     options.setArgs("AMG SOLVER", "JL_AMG");
     options.setArgs(parSectionName + "SEMFEM SOLVER", options.getArgs("AMG SOLVER"));
     options.setArgs("AMG SOLVER PRECISION", "FP64");
     options.setArgs(parSectionName + "SEMFEM SOLVER PRECISION", "FP64");
     options.setArgs("AMG SOLVER LOCATION", "CPU");
+    options.setArgs("GALERKIN COARSE OPERATOR", "TRUE");
   }
-  else if(p_coarseSolver.find("JL_XXT") != std::string::npos){
+  else if(p_coarseSolver.find("jlxxt") != std::string::npos){
     options.setArgs("AMG SOLVER", "JL_XXT");
     options.setArgs(parSectionName + "SEMFEM SOLVER", options.getArgs("AMG SOLVER"));
     options.setArgs("AMG SOLVER PRECISION", "FP64");
     options.setArgs(parSectionName + "SEMFEM SOLVER PRECISION", "FP64");
     options.setArgs("AMG SOLVER LOCATION", "CPU");
+    options.setArgs("GALERKIN COARSE OPERATOR", "TRUE");
   }
 
   // coarse grid discretization
