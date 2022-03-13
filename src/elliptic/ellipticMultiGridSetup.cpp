@@ -26,6 +26,7 @@
 
 #include "elliptic.h"
 #include "platform.hpp"
+#include "jl.h"
 
 void ellipticMultiGridSetup(elliptic_t* elliptic_, precon_t* precon)
 {
@@ -181,30 +182,50 @@ void ellipticMultiGridSetup(elliptic_t* elliptic_, precon_t* precon)
         ellipticBuildContinuous(ellipticCoarse, &coarseA, &nnzCoarseA,&coarseogs,
                                 coarseGlobalStarts);
 
-      hlong* Rows = (hlong*) calloc(nnzCoarseA, sizeof(hlong));
-      hlong* Cols = (hlong*) calloc(nnzCoarseA, sizeof(hlong));
-      dfloat* Vals = (dfloat*) calloc(nnzCoarseA,sizeof(dfloat));
+      if (options.compareArgs("AMG SOLVER", "JL_XXT") || options.compareArgs("AMG SOLVER", "JL_AMG")) {
+        if (!options.compareArgs("GALERKIN COARSE OPERATOR", "TRUE")) {
+          printf("XXT and AMG have to be used with Galerkin coarse operator\n");
+          exit(EXIT_FAILURE);
+        }
+        uint ntot, nnz, *ia, *ja;
+        ulong *gids;
+        double *a;
+        jl_setup_aux(&ntot, &gids, &nnz, &ia, &ja, &a, ellipticCoarse, elliptic);
 
-      for (dlong i = 0; i < nnzCoarseA; i++) {
-        Rows[i] = coarseA[i].row;
-        Cols[i] = coarseA[i].col;
-        Vals[i] = coarseA[i].val;
+        int algo = 1; // JL_AMG
+        if (options.compareArgs("AMG SOLVER", "JL_XXT"))
+          algo = 0;
+
+        jl_setup(algo, precon->parAlmond, ntot, gids, nnz, ia, ja, a,
+                 elliptic->allNeumann, 1);
+
+        free(gids), free(ia), free(ja), free(a);
+      } else {
+        hlong* Rows = (hlong*) calloc(nnzCoarseA, sizeof(hlong));
+        hlong* Cols = (hlong*) calloc(nnzCoarseA, sizeof(hlong));
+        dfloat* Vals = (dfloat*) calloc(nnzCoarseA,sizeof(dfloat));
+
+        for (dlong i = 0; i < nnzCoarseA; i++) {
+          Rows[i] = coarseA[i].row;
+          Cols[i] = coarseA[i].col;
+          Vals[i] = coarseA[i].val;
+        }
+        free(coarseA);
+
+        // build amg starting at level N=1
+        parAlmond::AMGSetup(precon->parAlmond,
+                            coarseGlobalStarts,
+                            nnzCoarseA,
+                            Rows,
+                            Cols,
+                            Vals,
+                            elliptic->allNeumann,
+                            0.0);
+
+        free(Rows);
+        free(Cols);
+        free(Vals);
       }
-      free(coarseA);
-
-      // build amg starting at level N=1
-      parAlmond::AMGSetup(precon->parAlmond,
-                          coarseGlobalStarts,
-                          nnzCoarseA,
-                          Rows,
-                          Cols,
-                          Vals,
-                          elliptic->allNeumann,
-                          0.0);
-
-      free(Rows);
-      free(Cols);
-      free(Vals);
     }
   } else {
     precon->parAlmond->baseLevel = precon->parAlmond->numLevels;

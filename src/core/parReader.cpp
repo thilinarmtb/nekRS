@@ -508,6 +508,8 @@ void parseCoarseSolver(const int rank, setupAide &options, inipp::Ini *par, std:
     {"fp64"},
     {"cpu"},
     {"gpu"},
+    {"jl_amg"},
+    {"jl_xxt"}
   };
 
   // solution methods
@@ -524,6 +526,20 @@ void parseCoarseSolver(const int rank, setupAide &options, inipp::Ini *par, std:
     options.setArgs("AMG SOLVER PRECISION", "FP32");
     options.setArgs(parSectionName + "SEMFEM SOLVER PRECISION", "FP32");
     options.setArgs("AMG SOLVER LOCATION", "GPU");
+  }
+  else if(p_coarseSolver.find("JL_AMG") != std::string::npos){
+    options.setArgs("AMG SOLVER", "JL_AMG");
+    options.setArgs(parSectionName + "SEMFEM SOLVER", options.getArgs("AMG SOLVER"));
+    options.setArgs("AMG SOLVER PRECISION", "FP64");
+    options.setArgs(parSectionName + "SEMFEM SOLVER PRECISION", "FP64");
+    options.setArgs("AMG SOLVER LOCATION", "CPU");
+  }
+  else if(p_coarseSolver.find("JL_XXT") != std::string::npos){
+    options.setArgs("AMG SOLVER", "JL_XXT");
+    options.setArgs(parSectionName + "SEMFEM SOLVER", options.getArgs("AMG SOLVER"));
+    options.setArgs("AMG SOLVER PRECISION", "FP64");
+    options.setArgs(parSectionName + "SEMFEM SOLVER PRECISION", "FP64");
+    options.setArgs("AMG SOLVER LOCATION", "CPU");
   }
 
   // coarse grid discretization
@@ -569,7 +585,7 @@ void parseCoarseSolver(const int rank, setupAide &options, inipp::Ini *par, std:
     {
       options.setArgs("AMG SOLVER LOCATION", "GPU");
       if(p_coarseSolver.find("boomeramg") != std::string::npos){
-        append_error("BoomerAMG+CPU is not currently supported!\n");
+        append_error("BoomerAMG+GPU is not currently supported!\n");
       }
     }
   }

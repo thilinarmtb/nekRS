@@ -35,6 +35,7 @@ SOFTWARE.
 #include "boomerAMG.h"
 #include "amgx.h"
 #include "platform.hpp"
+#include "jl.h"
 
 namespace {
   static occa::kernel convertFP64ToFP32Kernel;
@@ -52,7 +53,9 @@ coarseSolver::coarseSolver(setupAide options_, MPI_Comm comm_) {
 }
 
 int coarseSolver::getTargetSize() {
-  if(options.compareArgs("AMG SOLVER", "BOOMERAMG"))
+  if(options.compareArgs("AMG SOLVER", "BOOMERAMG") ||
+     options.compareArgs("AMG SOLVER", "JL_XXT") ||
+     options.compareArgs("AMG SOLVER", "JL_AMG"))
     return INT_MAX;
   else 
     return 1000;
@@ -421,20 +424,24 @@ void coarseSolver::AmgXSolve(occa::memory o_rhs, occa::memory o_x) {
 void coarseSolver::solve(occa::memory o_rhs, occa::memory o_x) {
 
   platform->timer.tic("coarseSolve", 1);
+  int jl = options.compareArgs("AMG SOLVER", "JL_AMG") || options.compareArgs("AMG SOLVER", "JL_XXT");
+
   if(useSEMFEM){
     semfemSolver(o_rhs, o_x);
   }
   else {
     const bool useDevice = options.compareArgs("AMG SOLVER", "AMGX");
-    if (gatherLevel) {
-      //weight
-      vectorDotStar(ogs->N, 1.0, ogs->o_invDegree, o_rhs, 0.0, o_Sx);
-      ogsGather(o_Gx, o_Sx, ogsDfloat, ogsAdd, ogs);
-      if(N && !useDevice)
-        o_Gx.copyTo(rhsLocal, N*sizeof(dfloat), 0);
-    } else {
-      if(N && !useDevice)
-        o_rhs.copyTo(rhsLocal, N*sizeof(dfloat), 0);
+    if (!jl) {
+      if (gatherLevel) {
+        //weight
+        vectorDotStar(ogs->N, 1.0, ogs->o_invDegree, o_rhs, 0.0, o_Sx);
+        ogsGather(o_Gx, o_Sx, ogsDfloat, ogsAdd, ogs);
+        if(N && useDevice)
+          o_Gx.copyTo(rhsLocal, N*sizeof(dfloat), 0);
+      } else {
+        if(N && useDevice)
+          o_rhs.copyTo(rhsLocal, N*sizeof(dfloat), 0);
+      }
     }
 
     if (options.compareArgs("AMG SOLVER", "BOOMERAMG")){
@@ -442,6 +449,8 @@ void coarseSolver::solve(occa::memory o_rhs, occa::memory o_x) {
     } else if (options.compareArgs("AMG SOLVER", "AMGX")){
       occa::memory o_b = gatherLevel ? o_Gx : o_rhs;
       AmgXSolve(o_b, o_x);
+    } else if (jl) {
+      jl_solve(o_x, o_Sx);
     } else {
       //gather the full vector
       MPI_Allgatherv(rhsLocal,             N,                MPI_DFLOAT,
@@ -457,19 +466,21 @@ void coarseSolver::solve(occa::memory o_rhs, occa::memory o_x) {
       }
     }
 
-    if (gatherLevel) {
-      if(N && !useDevice)
-        o_Gx.copyFrom(xLocal, N*sizeof(dfloat));
-      if(N && useDevice)
-        o_Gx.copyFrom(o_x, N*sizeof(dfloat));
-      ogsScatter(o_x, o_Gx, ogsDfloat, ogsAdd, ogs);
-    } else {
-      if(N && !useDevice)
-        o_x.copyFrom(xLocal, N*sizeof(dfloat), 0);
+    if (!jl) {
+      if (gatherLevel) {
+        if(N && !useDevice)
+          o_Gx.copyFrom(xLocal, N*sizeof(dfloat));
+        if(N && useDevice)
+          o_Gx.copyFrom(o_x, N*sizeof(dfloat));
+        ogsScatter(o_x, o_Gx, ogsDfloat, ogsAdd, ogs);
+      } else {
+        if(N && !useDevice)
+          o_x.copyFrom(xLocal, N*sizeof(dfloat), 0);
+      }
     }
   }
-  platform->timer.toc("coarseSolve");
 
+  platform->timer.toc("coarseSolve");
 }
 
 } //namespace parAlmond
