@@ -279,6 +279,7 @@ target_include_directories(nekrs-lib
   ${OGS_SOURCE_DIR}/include
   ${OGS_SOURCE_DIR}
   ${ELLIPTIC_SOURCE_DIR}
+  ${ELLIPTIC_SOURCE_DIR}/JL
   PRIVATE
   ${ELLIPTIC_SOURCE_DIR}/amgSolver/hypre
   ${ELLIPTIC_SOURCE_DIR}/amgSolver/amgx

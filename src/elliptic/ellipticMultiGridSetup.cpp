@@ -26,6 +26,7 @@
 
 #include "elliptic.h"
 #include "platform.hpp"
+#include "jl.h"
 
 void ellipticMultiGridSetup(elliptic_t* elliptic_, precon_t* precon)
 {
@@ -160,7 +161,8 @@ void ellipticMultiGridSetup(elliptic_t* elliptic_, precon_t* precon)
   if(options.compareArgs("MULTIGRID COARSE SOLVE", "TRUE")){
     if(options.compareArgs("MULTIGRID COARSE SEMFEM", "TRUE")){
       ellipticSEMFEMSetup(ellipticCoarse);
-      precon->parAlmond->coarseLevel = new parAlmond::coarseSolver(precon->parAlmond->options, platform->comm.mpiComm);
+      precon->parAlmond->coarseLevel = new parAlmond::coarseSolver(precon->parAlmond->options,
+                                                                   platform->comm.mpiComm);
       precon->parAlmond->coarseLevel->useSEMFEM = true;
       precon->parAlmond->coarseLevel->semfemSolver = [ellipticCoarse](occa::memory o_rhs, occa::memory o_x)
       {
@@ -181,30 +183,53 @@ void ellipticMultiGridSetup(elliptic_t* elliptic_, precon_t* precon)
         ellipticBuildContinuous(ellipticCoarse, &coarseA, &nnzCoarseA,&coarseogs,
                                 coarseGlobalStarts);
 
-      hlong* Rows = (hlong*) calloc(nnzCoarseA, sizeof(hlong));
-      hlong* Cols = (hlong*) calloc(nnzCoarseA, sizeof(hlong));
-      dfloat* Vals = (dfloat*) calloc(nnzCoarseA,sizeof(dfloat));
+      if (options.compareArgs("AMG SOLVER", "JL_XXT") ||
+          options.compareArgs("AMG SOLVER", "JL_AMG")) {
+        if (!options.compareArgs("GALERKIN COARSE OPERATOR", "TRUE")) {
+          if (platform->comm.mpiRank == 0)
+            printf("XXT and AMG have to be used with Galerkin coarse operator\n");
+          exit(EXIT_FAILURE);
+        }
 
-      for (dlong i = 0; i < nnzCoarseA; i++) {
-        Rows[i] = coarseA[i].row;
-        Cols[i] = coarseA[i].col;
-        Vals[i] = coarseA[i].val;
+        uint ntot, nnz, *ia, *ja;
+        ulong *gids;
+        double *a;
+        jl_setup_aux(&ntot, &gids, &nnz, &ia, &ja, &a, ellipticCoarse, elliptic);
+
+        int algo = 1; // JL_AMG
+        if (options.compareArgs("AMG SOLVER", "JL_XXT"))
+          algo = 0;
+
+        jl_setup(algo, precon->parAlmond, ntot, gids, nnz, ia, ja, a,
+                 elliptic->allNeumann, 1);
+
+        free(gids), free(ia), free(ja), free(a);
+      } else {
+        hlong* Rows = (hlong*) calloc(nnzCoarseA, sizeof(hlong));
+        hlong* Cols = (hlong*) calloc(nnzCoarseA, sizeof(hlong));
+        dfloat* Vals = (dfloat*) calloc(nnzCoarseA,sizeof(dfloat));
+
+        for (dlong i = 0; i < nnzCoarseA; i++) {
+          Rows[i] = coarseA[i].row;
+          Cols[i] = coarseA[i].col;
+          Vals[i] = coarseA[i].val;
+        }
+        free(coarseA);
+
+        // build amg starting at level N=1
+        parAlmond::AMGSetup(precon->parAlmond,
+                            coarseGlobalStarts,
+                            nnzCoarseA,
+                            Rows,
+                            Cols,
+                            Vals,
+                            elliptic->allNeumann,
+                            0.0);
+
+        free(Rows);
+        free(Cols);
+        free(Vals);
       }
-      free(coarseA);
-
-      // build amg starting at level N=1
-      parAlmond::AMGSetup(precon->parAlmond,
-                          coarseGlobalStarts,
-                          nnzCoarseA,
-                          Rows,
-                          Cols,
-                          Vals,
-                          elliptic->allNeumann,
-                          0.0);
-
-      free(Rows);
-      free(Cols);
-      free(Vals);
     }
   } else {
     precon->parAlmond->baseLevel = precon->parAlmond->numLevels;
@@ -256,7 +281,12 @@ void ellipticMultiGridSetup(elliptic_t* elliptic_, precon_t* precon)
           //this level is the base
           parAlmond::coarseSolver* coarseLevel = precon->parAlmond->coarseLevel;
 
-          coarseLevel->gatherLevel = true;
+          if (options.compareArgs("AMG SOLVER", "JL_XXT") || options.compareArgs("AMG SOLVER", "JL_AMG")) {
+            coarseLevel->gatherLevel = false;
+          } else {
+            coarseLevel->gatherLevel = true;
+          }
+
           coarseLevel->ogs = ellipticCoarse->ogs;
           coarseLevel->Gx = (dfloat*) calloc(coarseLevel->ogs->Ngather,sizeof(dfloat));
           coarseLevel->Sx = (dfloat*) calloc(ellipticCoarse->mesh->Np * ellipticCoarse->mesh->Nelements,

@@ -1,0 +1,93 @@
+@kernel void u2c(const dlong cn, @restrict const dlong *ids,
+                 @restrict const dlong *offsets, @restrict const dfloat *vu,
+                 @restrict dfloat *vc) {
+  for (dlong i = 0; i < cn; ++i; @tile(p_blockSize, @outer, @inner)) {
+    const dlong s = offsets[i];
+    const dlong e = offsets[i + 1];
+    dfloat a = 0.0;
+
+    for (dlong n = s; n < e; n++) {
+      const dlong id = ids[n];
+      a += vu[id];
+    }
+    vc[i] = a;
+  }
+}
+
+
+@kernel void c2u(const dlong cn, @restrict const dlong *ids,
+                 @restrict const dlong *offsets, @restrict const dfloat *vc,
+                 @restrict dfloat *vu) {
+  for (dlong i = 0; i < cn; ++i; @tile(p_blockSize, @outer, @inner)) {
+    const dlong s = offsets[i];
+    const dlong e = offsets[i + 1];
+    dfloat a = vc[i];
+
+    for (dlong n = s; n < e; n++) {
+      const dlong id = ids[n];
+      vu[id] = a;
+    }
+  }
+}
+
+@kernel void apply_m_Asl(const dlong ln, const dlong sn,
+                         @restrict const unsigned int *Arp,
+                         @restrict const unsigned int *Aj,
+                         @restrict const dfloat *A, @restrict dfloat *vc) {
+  dfloat *vl = vc;
+  dfloat *vs = vc + ln;
+  for (dlong i = 0; i < sn; ++i; @tile(p_blockSize, @outer, @inner)) {
+    dfloat f = 0.0;
+    for (dlong p = Arp[i], pe = Arp[i + 1]; p < pe; ++p) {
+      const dlong id = Aj[p];
+      f += A[p]*vl[id];
+    }
+    vs[i] = vs[i] - f;
+  }
+}
+
+/* TODO: This needs to be rewritten */
+@kernel void apply_p_Als(const dlong ln, const dlong sn,
+                         @restrict const unsigned int *Arp,
+                         @restrict const unsigned int *Aj,
+                         @restrict const dfloat *A, @restrict const dfloat *vc,
+                         @restrict dfloat *vl) {
+  const dfloat *vs = vc + ln;
+  for (dlong i = 0; i < sn; ++i; @tile(p_blockSize, @outer, @inner)) {
+    for (dlong p = Arp[i], pe = Arp[i + 1]; p < pe; ++p) {
+      const dlong id = Aj[p];
+      vl[id] += A[p]*vs[i];
+    }
+  }
+}
+
+@kernel void apply_Xt(const dlong nx, const dlong ln,
+                      @restrict const dfloat  *vc, @restrict const dfloat *X,
+                      @restrict const unsigned int *Xp, @restrict dfloat *vx) {
+  const dfloat *vs = vc + ln;
+  for (dlong i = 0; i < nx; i++; @tile(p_blockSize, @outer, @inner)) {
+    dfloat sum = 0.0;
+    for (dlong j = Xp[i], k = 0; j < Xp[i + 1]; j++, k++) {
+      sum += vs[k]*X[j];
+    }
+    vx[i] = sum;
+  }
+}
+
+@kernel void zero(const dlong ns, const dlong ln, @restrict dfloat *vc) {
+  dfloat *vs = vc + ln;
+  for (dlong i = 0; i < ns; i++; @tile(p_blockSize, @outer, @inner))
+    vs[i] = 0.0;
+}
+
+@kernel void apply_X(const dlong nx, const dlong ln, @restrict const dfloat *vx,
+                     @restrict const dfloat *X,
+                     @restrict const unsigned int *Xp, @restrict dfloat *vc) {
+  dfloat *vs = vc + ln;
+  for (dlong i = 0; i < nx; i++; @tile(p_blockSize, @outer, @inner)) {
+    const dfloat v = vx[i];
+    for (dlong j = Xp[i], k = 0; j < Xp[i + 1]; j++, k++) {
+      vs[k] += v*X[j];
+    }
+  }
+}

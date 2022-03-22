@@ -220,6 +220,8 @@ void ellipticBuildContinuousGalerkinHex3D(elliptic_t* elliptic,
 
         o_q.copyFrom(q);
         ellipticOperator(ellipticFine, o_q, o_Aq, dfloatString, false);
+        // ellipticAx(ef, mf->NglobalGatherElements, mf->o_globalGatherElementList, o_u, o_w, dfloatString);
+        // ellipticAx(ef, mf->NlocalGatherElements, mf->o_localGatherElementList, o_u, o_w, dfloatString);
         o_Aq.copyTo(Aq);
 
         for(dlong e = 0; e < mesh->Nelements; e++)
