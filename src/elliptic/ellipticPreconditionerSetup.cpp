@@ -41,6 +41,7 @@ void ellipticPreconditionerSetup(elliptic_t* elliptic, ogs_t* ogs)
     if(platform->comm.mpiRank == 0) printf("building MG preconditioner ... \n"); fflush(stdout);
     ellipticMultiGridSetup(elliptic,precon);
   } else if(options.compareArgs("PRECONDITIONER", "SEMFEM")) {
+    if(platform->comm.mpiRank == 0) printf("building SEMFEM preconditioner ... \n"); fflush(stdout);
     ellipticSEMFEMSetup(elliptic);
   } else if(options.compareArgs("PRECONDITIONER", "JACOBI")) {
     if(platform->comm.mpiRank == 0) printf("building Jacobi preconditioner ... "); fflush(stdout);
