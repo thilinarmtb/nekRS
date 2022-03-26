@@ -426,22 +426,24 @@ void coarseSolver::AmgXSolve(occa::memory o_rhs, occa::memory o_x) {
 }
 
 void coarseSolver::solve(occa::memory o_rhs, occa::memory o_x) {
-  platform->timer.tic("coarseSolve", 1);
   int jl = options.compareArgs("AMG SOLVER", "JL_AMG") || options.compareArgs("AMG SOLVER", "JL_XXT");
+  platform->timer.tic("coarseSolve", 1);
 
   if(useSEMFEM){
     semfemSolver(o_rhs, o_x);
   } else {
     const bool useDevice = options.compareArgs("AMG SOLVER", "AMGX");
-    if (gatherLevel) {
-      //weight
-      vectorDotStar(ogs->N, 1.0, ogs->o_invDegree, o_rhs, 0.0, o_Sx);
-      ogsGather(o_Gx, o_Sx, ogsDfloat, ogsAdd, ogs);
-      if(N && useDevice)
-        o_Gx.copyTo(rhsLocal, N*sizeof(dfloat), 0);
-    } else {
-      if(N && useDevice)
-        o_rhs.copyTo(rhsLocal, N*sizeof(dfloat), 0);
+    if (!jl) {
+      if (gatherLevel) {
+        //weight
+        vectorDotStar(ogs->N, 1.0, ogs->o_invDegree, o_rhs, 0.0, o_Sx);
+        ogsGather(o_Gx, o_Sx, ogsDfloat, ogsAdd, ogs);
+        if(N && !useDevice)
+          o_Gx.copyTo(rhsLocal, N*sizeof(dfloat), 0);
+      } else {
+        if(N && !useDevice)
+          o_rhs.copyTo(rhsLocal, N*sizeof(dfloat), 0);
+      }
     }
 
     if (options.compareArgs("AMG SOLVER", "BOOMERAMG")){

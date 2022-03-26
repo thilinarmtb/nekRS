@@ -95,11 +95,12 @@ void ellipticMultiGridSetup(elliptic_t* elliptic_, precon_t* precon)
   for (int n = 1; n < numMGLevels - 1; n++) {
     int Nc = levelDegree[n];
     int Nf = levelDegree[n - 1];
+    elliptic_t* ellipticFine = ((MGLevel*) levels[n - 1])->elliptic;
     //build elliptic struct for this degree
     if(platform->comm.mpiRank == 0)
       printf("=============BUILDING MULTIGRID LEVEL OF DEGREE %d==================\n", Nc);
 
-    elliptic_t* ellipticC = ellipticBuildMultigridLevel(elliptic,Nc,Nf);
+    elliptic_t* ellipticC = ellipticBuildMultigridLevel(ellipticFine,Nc,Nf);
 
     auto callback = [&]()
                     {
@@ -116,7 +117,7 @@ void ellipticMultiGridSetup(elliptic_t* elliptic_, precon_t* precon)
     //add the level manually
     levels[n] = new MGLevel(elliptic,
                             meshLevels,
-                            ((MGLevel*) levels[n - 1])->elliptic,
+                            ellipticFine,
                             ellipticC,
                             Nf, Nc,
                             options,
@@ -155,11 +156,10 @@ void ellipticMultiGridSetup(elliptic_t* elliptic_, precon_t* precon)
   /* build degree 1 problem and pass to AMG */
   int jl = options.compareArgs("AMG SOLVER", "JL_XXT") || options.compareArgs("AMG SOLVER", "JL_AMG");
 
-  if (options.compareArgs("MULTIGRID COARSE SOLVE", "TRUE")) {
-    if (options.compareArgs("MULTIGRID COARSE SEMFEM", "TRUE")) {
+  if(options.compareArgs("MULTIGRID COARSE SOLVE", "TRUE")){
+    if(options.compareArgs("MULTIGRID COARSE SEMFEM", "TRUE")){
       ellipticSEMFEMSetup(ellipticCoarse);
-      precon->parAlmond->coarseLevel = new parAlmond::coarseSolver(precon->parAlmond->options,
-                                                                   platform->comm.mpiComm);
+      precon->parAlmond->coarseLevel = new parAlmond::coarseSolver(precon->parAlmond->options, platform->comm.mpiComm);
       precon->parAlmond->coarseLevel->useSEMFEM = true;
       precon->parAlmond->coarseLevel->semfemSolver = [ellipticCoarse](occa::memory o_rhs, occa::memory o_x)
       {
