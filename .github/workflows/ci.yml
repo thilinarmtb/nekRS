@@ -37,6 +37,9 @@ jobs:
 
     - name: APT dependencies
       run: |
+        sudo apt install gcc-9 g++-9
+        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 100 --slave /usr/bin/g++ g++ /usr/bin/g++-9 --slave /usr/bin/gcov gcov /usr/bin/gcov-9
+        sudo update-alternatives --set gcc /usr/bin/gcc-9
         sudo apt -y update
         sudo apt install -y mpich libmpich-dev
 
@@ -64,6 +67,9 @@ jobs:
 
     - name: APT dependencies
       run: |
+        sudo apt install gcc-9 g++-9
+        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 100 --slave /usr/bin/g++ g++ /usr/bin/g++-9 --slave /usr/bin/gcov gcov /usr/bin/gcov-9
+        sudo update-alternatives --set gcc /usr/bin/gcc-9
         sudo apt -y update
         sudo apt install -y mpich libmpich-dev
 
@@ -140,6 +146,9 @@ jobs:
 
     - name: APT dependencies
       run: |
+        sudo apt install gcc-9 g++-9
+        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 100 --slave /usr/bin/g++ g++ /usr/bin/g++-9 --slave /usr/bin/gcov gcov /usr/bin/gcov-9
+        sudo update-alternatives --set gcc /usr/bin/gcc-9
         sudo apt -y update
         sudo apt install -y mpich libmpich-dev
 
@@ -168,6 +177,9 @@ jobs:
 
     - name: APT dependencies
       run: |
+        sudo apt install gcc-9 g++-9
+        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 100 --slave /usr/bin/g++ g++ /usr/bin/g++-9 --slave /usr/bin/gcov gcov /usr/bin/gcov-9
+        sudo update-alternatives --set gcc /usr/bin/gcc-9
         sudo apt -y update
         sudo apt install -y mpich libmpich-dev
 
@@ -242,6 +254,9 @@ jobs:
 
     - name: APT dependencies
       run: |
+        sudo apt install gcc-9 g++-9
+        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 100 --slave /usr/bin/g++ g++ /usr/bin/g++-9 --slave /usr/bin/gcov gcov /usr/bin/gcov-9
+        sudo update-alternatives --set gcc /usr/bin/gcc-9
         sudo apt -y update
         sudo apt install -y mpich libmpich-dev
 
@@ -270,6 +285,9 @@ jobs:
 
     - name: APT dependencies
       run: |
+        sudo apt install gcc-9 g++-9
+        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 100 --slave /usr/bin/g++ g++ /usr/bin/g++-9 --slave /usr/bin/gcov gcov /usr/bin/gcov-9
+        sudo update-alternatives --set gcc /usr/bin/gcc-9
         sudo apt -y update
         sudo apt install -y mpich libmpich-dev
 
@@ -301,6 +319,9 @@ jobs:
 
     - name: APT dependencies
       run: |
+        sudo apt install gcc-9 g++-9
+        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 100 --slave /usr/bin/g++ g++ /usr/bin/g++-9 --slave /usr/bin/gcov gcov /usr/bin/gcov-9
+        sudo update-alternatives --set gcc /usr/bin/gcc-9
         sudo apt -y update
         sudo apt install -y mpich libmpich-dev
 
@@ -331,6 +352,9 @@ jobs:
 
     - name: APT dependencies
       run: |
+        sudo apt install gcc-9 g++-9
+        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 100 --slave /usr/bin/g++ g++ /usr/bin/g++-9 --slave /usr/bin/gcov gcov /usr/bin/gcov-9
+        sudo update-alternatives --set gcc /usr/bin/gcc-9
         sudo apt -y update
         sudo apt install -y mpich libmpich-dev
 
@@ -354,6 +378,9 @@ jobs:
 
     - name: APT dependencies
       run: |
+        sudo apt install gcc-9 g++-9
+        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 100 --slave /usr/bin/g++ g++ /usr/bin/g++-9 --slave /usr/bin/gcov gcov /usr/bin/gcov-9
+        sudo update-alternatives --set gcc /usr/bin/gcc-9
         sudo apt -y update
         sudo apt install -y mpich libmpich-dev
 
@@ -377,6 +404,9 @@ jobs:
 
     - name: APT dependencies
       run: |
+        sudo apt install gcc-9 g++-9
+        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 100 --slave /usr/bin/g++ g++ /usr/bin/g++-9 --slave /usr/bin/gcov gcov /usr/bin/gcov-9
+        sudo update-alternatives --set gcc /usr/bin/gcc-9
         sudo apt -y update
         sudo apt install -y mpich libmpich-dev
 
@@ -400,6 +430,9 @@ jobs:
 
     - name: APT dependencies
       run: |
+        sudo apt install gcc-9 g++-9
+        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 100 --slave /usr/bin/g++ g++ /usr/bin/g++-9 --slave /usr/bin/gcov gcov /usr/bin/gcov-9
+        sudo update-alternatives --set gcc /usr/bin/gcc-9
         sudo apt -y update
         sudo apt install -y mpich libmpich-dev
 
@@ -423,6 +456,9 @@ jobs:
 
     - name: APT dependencies
       run: |
+        sudo apt install gcc-9 g++-9
+        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 100 --slave /usr/bin/g++ g++ /usr/bin/g++-9 --slave /usr/bin/gcov gcov /usr/bin/gcov-9
+        sudo update-alternatives --set gcc /usr/bin/gcc-9
         sudo apt -y update
         sudo apt install -y mpich libmpich-dev
 
@@ -448,6 +484,9 @@ jobs:
 
     - name: APT dependencies
       run: |
+        sudo apt install gcc-9 g++-9
+        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 100 --slave /usr/bin/g++ g++ /usr/bin/g++-9 --slave /usr/bin/gcov gcov /usr/bin/gcov-9
+        sudo update-alternatives --set gcc /usr/bin/gcc-9
         sudo apt -y update
         sudo apt install -y mpich libmpich-dev
 
@@ -471,6 +510,9 @@ jobs:
 
     - name: APT dependencies
       run: |
+        sudo apt install gcc-9 g++-9
+        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 100 --slave /usr/bin/g++ g++ /usr/bin/g++-9 --slave /usr/bin/gcov gcov /usr/bin/gcov-9
+        sudo update-alternatives --set gcc /usr/bin/gcc-9
         sudo apt -y update
         sudo apt install -y mpich libmpich-dev
 
@@ -494,6 +536,9 @@ jobs:
 
     - name: APT dependencies
       run: |
+        sudo apt install gcc-9 g++-9
+        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 100 --slave /usr/bin/g++ g++ /usr/bin/g++-9 --slave /usr/bin/gcov gcov /usr/bin/gcov-9
+        sudo update-alternatives --set gcc /usr/bin/gcc-9
         sudo apt -y update
         sudo apt install -y mpich libmpich-dev
 
@@ -517,6 +562,9 @@ jobs:
 
     - name: APT dependencies
       run: |
+        sudo apt install gcc-9 g++-9
+        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 100 --slave /usr/bin/g++ g++ /usr/bin/g++-9 --slave /usr/bin/gcov gcov /usr/bin/gcov-9
+        sudo update-alternatives --set gcc /usr/bin/gcc-9
         sudo apt -y update
         sudo apt install -y mpich libmpich-dev
 
@@ -540,6 +588,9 @@ jobs:
 
     - name: APT dependencies
       run: |
+        sudo apt install gcc-9 g++-9
+        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 100 --slave /usr/bin/g++ g++ /usr/bin/g++-9 --slave /usr/bin/gcov gcov /usr/bin/gcov-9
+        sudo update-alternatives --set gcc /usr/bin/gcc-9
         sudo apt -y update
         sudo apt install -y mpich libmpich-dev
 
