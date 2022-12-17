@@ -6,19 +6,20 @@ set -e -a
 : ${NEKRS_CC:="mpicc"}
 : ${NEKRS_CXX:="mpic++"}
 : ${NEKRS_FC:="mpif77"}
-: ${NEKRS_COMPILER_FLAGS:="-O2 -g -march=native -mtune=native -ftree-vectorize"}
+: ${NEKRS_COMPILER_FLAGS:="-O2 -g -mtune=native -ftree-vectorize"}
 
 : ${NEKRS_GPU_MPI:=1}
 
 : ${OCCA_CXX:="g++"}
-: ${OCCA_CXXFLAGS:="-O3 -g -march=native -mtune=native"}
+: ${OCCA_CXXFLAGS:="-O3 -g -mtune=native"}
 : ${OCCA_CUDA_COMPILER_FLAGS:="-O3 --fmad=true -lineinfo"}
 : ${OCCA_HIP_COMPILER_FLAGS:="-O3 -g -ffp-contract=fast"}
 : ${OCCA_OPENCL_COMPILER_FLAGS:="-cl-std=CL2.0 -cl-mad-enable -cl-no-signed-zeros"}
 
-: ${OCCA_ENABLE_CUDA:=1}
-: ${OCCA_ENABLE_HIP:=1}
+: ${OCCA_ENABLE_CUDA:=0}
+: ${OCCA_ENABLE_HIP:=0}
 : ${OCCA_ENABLE_OPENCL:=0}
+: ${OCCA_ENABLE_METAL:=1}
 : ${ENABLE_AMGX:=0}
 
 if uname -a | grep 'ppc64'; then

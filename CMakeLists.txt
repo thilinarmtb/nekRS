@@ -20,7 +20,7 @@ set(FETCHCONTENT_UPDATES_DISCONNECTED on)
 #Link:https://gitlab.kitware.com/cmake/community/wikis/doc/cmake/RPATH-handling
 set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
 set(CMAKE_SKIP_BUILD_RPATH FALSE)
-#set(CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 
 ###############################################################################
@@ -39,7 +39,6 @@ set(OCCA_CUDA_COMPILER_FLAGS "-O3 --fmad=true" CACHE STRING "CUDA flags for OCCA
 set(OCCA_HIP_COMPILER_FLAGS "-O3 -ffp-contract=fast" CACHE STRING "HIP flags for OCCA JIT compile")
 set(OCCA_OPENCL_COMPILER_FLAGS "-cl-std=CL2.0 -cl-mad-enable -cl-no-signed-zeros" CACHE STRING "OPENCL flags for OCCA JIT compile")
 
-set(ENABLE_METAL OFF CACHE BOOL "Enable OCCA Metal support")
 set(ENABLE_AMGX OFF CACHE BOOL "Enable NVIDIA AMGX support")
 set(GPU_MPI "1" CACHE STRING "GPU aware MPI")
 
@@ -136,6 +135,7 @@ include(config/occa.cmake)
 set(ENABLE_CUDA ${OCCA_CUDA_ENABLED})
 set(ENABLE_HIP ${OCCA_HIP_ENABLED})
 set(ENABLE_OPENCL ${OCCA_OPENCL_ENABLED})
+set(ENABLE_METAL ${OCCA_METAL_ENABLED})
 
 ###############################################################################
 # Build AMGX                                                                  #
@@ -245,7 +245,7 @@ add_library(nekrs-lib SHARED ${SRC})
 
 add_dependencies(nekrs-lib HYPRE_BUILD)
 set_target_properties(nekrs-lib PROPERTIES LINKER_LANGUAGE CXX OUTPUT_NAME nekrs)
-target_link_libraries(nekrs-lib PUBLIC libocca OpenMP::OpenMP_CXX PRIVATE gs ${GSLIB})
+target_link_libraries(nekrs-lib PUBLIC libocca PRIVATE gs ${GSLIB})
 
 target_compile_definitions(nekrs-lib PUBLIC
     -DDOGS="${CMAKE_INSTALL_PREFIX}/gatherScatter"
