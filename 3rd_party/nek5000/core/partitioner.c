@@ -9,7 +9,6 @@ typedef struct{
   long long vtx[MAXNV];
   long long eid;
   int proc;
-  uint seq;
 } edata;
 
 #ifdef PARMETIS
@@ -159,7 +158,7 @@ err:
 }
 #endif
 
-void printPartStat(long long *vtx, int nel, int nv, comm_ext ce)
+void print_part_stat(long long *vtx, int nel, int nv, comm_ext ce)
 {
   int i,j;
 
@@ -253,8 +252,8 @@ void printPartStat(long long *vtx, int nel, int nv, comm_ext ce)
   comm_free(&comm);
 }
 
-int redistributeData(int *nel_, long long *vl, long long *el, int *part, int *seq, int nv, int lelt,
-                     struct comm *comm) {
+int redistribute_data(int *nel_, long long *vl, long long *el, int *part,
+    int nv, int lelt, struct comm *comm) {
   int nel=*nel_;
 
   struct crystal cr;
@@ -271,11 +270,6 @@ int redistributeData(int *nel_, long long *vl, long long *el, int *part, int *se
     for(n = 0; n < nv; ++n) {
       data[e].vtx[n] = vl[e*nv + n];
     }
-  }
-
-  if(seq!=NULL){
-    for(data=eList.ptr, e=0; e<nel; ++e)
-      data[e].seq=seq[e];
   }
 
   crystal_init(&cr,comm);
@@ -295,13 +289,6 @@ int redistributeData(int *nel_, long long *vl, long long *el, int *part, int *se
     return 1;
   }
 
-  //TODO: sort by seq
-  if(seq!=NULL){
-    buffer bfr; buffer_init(&bfr,1024);
-    sarray_sort(edata,eList.ptr,eList.n,seq,0,&bfr);
-    buffer_free(&bfr);
-  }
-
   for(data = eList.ptr, e = 0; e < nel; ++e) {
     el[e] = data[e].eid;
     for(n = 0; n < nv; ++n) {
@@ -314,22 +301,27 @@ int redistributeData(int *nel_, long long *vl, long long *el, int *part, int *se
   return 0;
 }
 
-#define fpartMesh FORTRAN_UNPREFIXED(fpartmesh,FPARTMESH)
-void fpartMesh(long long *el, long long *vl, double *xyz, const int *lelt, int *nell, const int *nve,
-               int *fcomm, int *fpartitioner, int *falgo, int *loglevel, int *rtval)
+#define fpartmesh FORTRAN_UNPREFIXED(fpartmesh,FPARTMESH)
+void fpartmesh(int *nell, long long *el, long long *vl, double *xyz,
+    const int *const tag, const int *const lelm, const int *const nve,
+    const int *const fcomm, const int *const fpartitioner,
+    const int *const falgo, const int *const loglevel, int *rtval)
 {
   struct comm comm;
 
-  int nel, nv, partitioner, algo;
+  int nel, nv, lelt, partitioner, algo;
   int e, n;
   int count, ierr, ibuf;
-  int *part,*seq;
+  int *part;
   int opt[3];
 
-  nel  = *nell;
-  nv   = *nve;
+  lelt = *lelm;
+  nel = *nell;
+  nv = *nve;
+  // partitioner: 0 - Default, 1 - RSB, 2 - RCB
   partitioner = *fpartitioner;
-  algo = *falgo; // 0 - Lanczos, 1 - MG (Used only when partitioner = 1)
+  // algo: 0 - Lanczos, 1 - MG (Used only when partitioner = 1)
+  algo = *falgo;
 
 #if defined(MPI)
   comm_ext cext = MPI_Comm_f2c(*fcomm);
@@ -338,75 +330,66 @@ void fpartMesh(long long *el, long long *vl, double *xyz, const int *lelt, int *
 #endif
   comm_init(&comm, cext);
 
-  part = (int *)malloc(*lelt * sizeof(int));
-  seq  = (int *)malloc(*lelt * sizeof(int));
-
   ierr = 1;
+  part = (int *)malloc(lelt * sizeof(int));
 #if defined(PARRSB)
-  // General options
+  parrsb_options options = parrsb_default_options;
+  // parrsb_default_options:
+  // - General options
   //   partitioner: Partition algo: 0 - RSB, 1 - RCB, 2 - RIB (Default: 0)
   //   verbose_level: Verbose level: 0, 1, 2, .. etc (Default: 1)
   //   profile_level: Profile level: 0, 1, 2, .. etc (Default: 1)
-  //   two_level: Use two level partitioning algo (Default: 0)
+  //   level: Number of levles in partitioning: 1, 2 (Default: 2)
   //   repair: Repair disconnected components: 0 - No, 1 - Yes (Default: 0)
-  // RSB specific
+  // - RSB specific
   //   rsb_algo: RSB algo: 0 - Lanczos, 1 - RQI (Default: 0)
   //   rsb_pre: RSB pre-partition algo: 0 - None, 1 - RCB , 2 - RIB (Default: 1)
   //   rsb_max_iter: Maximum iterations in Lanczos or RQI (Default: 50)
   //   rsb_tol: Tolerance for Lanczos or RQI (Default: 1e-3)
-  // RSB-MG specific
+  // - RSB-MG specific
   //   rsb_mg_grammian: MG Grammian: 0 or 1 (Default: 0)
   //   rsb_mg_factor: MG Coarsening factor (Default: 2, should be > 1)
-  // RSB-Lanczos specific
+  // - RSB-Lanczos specific
   //   rsb_lanczos_max_restarts: Maximum restarts in Lanczos (Default: 50)
 
-  parrsb_options options = parrsb_default_options;
-  if (partitioner & 1)
+  if (partitioner & 1) {
     options.partitioner = 0;
-  else if (partitioner & 2)
-    options.partitioner = 1;
-
-  if (partitioner & 1)
     options.rsb_algo = algo;
+  } else if (partitioner & 2) {
+    options.partitioner = 1;
+  }
 
   if (*loglevel > 2)
-    printPartStat(vl, nel, nv, cext);
+    print_part_stat(vl, nel, nv, cext);
 
-  ierr = parrsb_part_mesh(part, seq, vl, xyz, nel, nv, options, comm.c);
+  ierr = parrsb_part_mesh(part, vl, xyz, tag, nel, nv, &options, comm.c);
   if (ierr != 0)
     goto err;
 
-  ierr = redistributeData(&nel, vl, el, part, seq, nv, *lelt, &comm);
+  ierr = redistribute_data(&nel, vl, el, part, nv, lelt, &comm);
   if (ierr != 0)
     goto err;
 
   if (*loglevel > 2)
-    printPartStat(vl, nel, nv, cext);
+    print_part_stat(vl, nel, nv, cext);
 
 #elif defined(PARMETIS)
-  int metis;
-  metis = partitioner & 4;
-
+  int metis = partitioner & 4;
   if (metis) {
     opt[0] = 1;
     opt[1] = 0; /* verbosity */
     opt[2] = comm.np;
 
-    ierr = parMETIS_partMesh(part,vl,nel,nv,opt,comm.c);
-
-    ierr = redistributeData(&nel,vl,el,part,NULL,nv,*lelt,&comm);
+    ierr = parMETIS_partMesh(part, vl, nel, nv, opt, comm.c);
+    ierr = redistribute_data(&nel, vl, el, part, NULL, nv, lelt ,&comm);
     if (ierr != 0)
       goto err;
   }
 #endif
-
   free(part);
-  free(seq);
 
   *nell = nel;
   *rtval = 0;
-  if (comm.id == 0) printf("\n");
-  fflush(stdout);
   return;
 
 err:
@@ -414,8 +397,8 @@ err:
   *rtval = 1;
 }
 
-#define fprintPartStat FORTRAN_UNPREFIXED(printpartstat,PRINTPARTSTAT)
-void fprintPartStat(long long *vtx, int *nel, int *nv, int *comm)
+#define fprintpartstat FORTRAN_UNPREFIXED(printpartstat,PRINTPARTSTAT)
+void fprintpartstat(long long *vtx, int *nel, int *nv, int *comm)
 {
 
 #if defined(MPI)
@@ -424,5 +407,5 @@ void fprintPartStat(long long *vtx, int *nel, int *nv, int *comm)
   comm_ext c = 0;
 #endif
 
-  printPartStat(vtx, *nel, *nv, c);
+  print_part_stat(vtx, *nel, *nv, c);
 }

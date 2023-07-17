@@ -140,6 +140,7 @@ c-----------------------------------------------------------------------
 
       include 'SIZE'
       include 'TOTAL'
+      include 'ZPER'
 
       parameter(mdw=2+2**ldim)
       parameter(ndw=7*lx1*ly1*lz1*lelv/mdw)
@@ -163,7 +164,7 @@ c-----------------------------------------------------------------------
       common /scrcg/ xyz(ldim*lelt*2**ldim)
 
       integer cnt, algo
-      integer opt_parrsb(3), opt_parmetis(10)
+      integer opt_parrsb(3), opt_parmetis(10), tag(lelt)
 
       logical ifbswap, ifread_con
 
@@ -223,14 +224,15 @@ c fluid elements
                 cnt=cnt+2
               endif
             enddo
+            tag(j)=(eid8(j)-1)/(nelx*nely)
          endif
          ii = ii + (nlv+1)
       enddo
       neliv = j
 
       nel = neliv
-      call fpartMesh(eid8,vtx8,xyz,lelt,nel,nlv,nekcomm,
-     $  meshPartitioner,0,loglevel,ierr)
+      call fpartmesh(nel,eid8,vtx8,xyz,tag,lelt,nlv,nekcomm,
+     $               meshPartitioner,0,loglevel,ierr)
       call err_chk(ierr,'partMesh fluid failed!$')
 
       nelv = nel
@@ -276,14 +278,15 @@ c solid elements
                    cnt=cnt+2
                  endif
                enddo
+               tag(j)=(eid8(j)-1)/(nelx*nely)
             endif
             ii = ii + (nlv+1)
          enddo
          nelit = j
 
          nel = nelit
-         call fpartMesh(eid8,vtx8,xyz,lelt,nel,nlv,nekcomm,
-     $                  2,0,loglevel,ierr)
+         call fpartmesh(nel,eid8,vtx8,xyz,tag,lelt,nlv,nekcomm,
+     $                  meshPartitioner,0,loglevel,ierr)
          call err_chk(ierr,'partMesh solid failed!$')
 
          nelt = nelv + nel
