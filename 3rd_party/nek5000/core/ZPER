@@ -1,2 +1,2 @@
-      integer nelx,nely,nelz
-      common /gfdmic/  nelx,nely,nelz
+      integer nelx,nely,nelz,nelxy_fluid,nelxy_solid
+      common /gfdmic/  nelx,nely,nelz,nelxy_fluid,nelxy_solid
