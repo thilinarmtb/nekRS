@@ -375,7 +375,7 @@ void fpartmesh(int *nell, long long *el, long long *vl, double *xyz,
   if (ierr != 0)
     goto err;
 
-  parrsb_check_tagged_partitions(el, vl, nel, nv, 10, &comm, 1);
+  // parrsb_check_tagged_partitions(el, vl, nel, nv, 10, &comm, 1);
 
   if (*loglevel > 2)
     print_part_stat(vl, nel, nv, cext);

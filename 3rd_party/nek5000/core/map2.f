@@ -163,8 +163,8 @@ c-----------------------------------------------------------------------
 
       common /scrcg/ xyz(ldim*lelt*2**ldim)
 
-      integer cnt, algo
-      integer opt_parrsb(3), opt_parmetis(10), tag(lelt)
+      integer cnt,algo,layer_id,assembly_id
+      integer opt_parrsb(3),opt_parmetis(10),tag(lelt)
 
       logical ifbswap, ifread_con
 
@@ -200,7 +200,8 @@ c fluid elements
       j  = 0
       ii = 0
       cnt= 0
-      nelxy_fluid=nelgv/nelz
+      nel_per_layer=nelgv/nlayers
+      nel_per_assembly=nel_per_layer/nassembly
       do i = 1,neli
          itmp = wk(ii+1)
          if (ifread_con) itmp = wk4(ii+1)
@@ -225,7 +226,10 @@ c fluid elements
                 cnt=cnt+2
               endif
             enddo
-            tag(j)=(eid8(j)-1)/nelxy_fluid
+            layer_id=(eid8(j)-1)/nel_per_layer
+            assembly_id=eid8(j)-1-layer_id*nel_per_layer
+            assembly_id=assembly_id/nel_per_assembly
+            tag(j)=assembly_id+nassembly*layer_id
          endif
          ii = ii + (nlv+1)
       enddo
@@ -251,7 +255,8 @@ c fluid elements
       enddo
 
       cnt=0
-      nelxy_solid=(nelgt-nelgv)/nelz
+      nel_per_layer=(nelgt-nelgv)/nlayers
+      nel_per_assembly=nel_per_layer/nassembly
 c solid elements
       if (nelgt.ne.nelgv) then
          j  = 0
@@ -280,7 +285,10 @@ c solid elements
                    cnt=cnt+2
                  endif
                enddo
-               tag(j)=(eid8(j)-nelgv-1)/nelxy_solid
+               layer_id=(eid8(j)-nelgv-1)/nel_per_layer
+               assembly_id=eid8(j)-nelgv-1-layer_id*nel_per_layer
+               assembly_id=assembly_id/nel_per_assembly
+               tag(j)=assembly_id+nassembly*layer_id
             endif
             ii = ii + (nlv+1)
          enddo
