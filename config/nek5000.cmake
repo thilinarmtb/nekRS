@@ -65,7 +65,7 @@ set(PARRSB_DIR ${NEK5000_SOURCE_DIR}/3rd_party/parRSB/parRSB)
 FetchContent_Declare(
   parrsb_content
   GIT_REPOSITORY https://github.com/thilinarmtb/parRSB.git
-  GIT_TAG parcon_debug_v7
+  GIT_TAG parcon_debug_v8
   # URL ${PARRSB_SUBTREE}
   SOURCE_DIR ${PARRSB_DIR}
 )

@@ -7,7 +7,7 @@
 #define MAXNV 8 /* maximum number of vertices per element */
 typedef struct{
   long long vtx[MAXNV];
-  long long eid;
+  ulong eid;
   int proc;
 } edata;
 
@@ -276,6 +276,11 @@ int redistribute_data(int *nel_, long long *vl, long long *el, int *part,
   sarray_transfer(edata, &eList, proc, 0, &cr);
   crystal_free(&cr);
 
+  buffer bfr;
+  buffer_init(&bfr, 1024);
+  sarray_sort(edata, eList.ptr, eList.n, eid, 1, &bfr);
+  buffer_free(&bfr);
+
   *nel_=nel=eList.n;
 
   count = 0;
@@ -369,6 +374,8 @@ void fpartmesh(int *nell, long long *el, long long *vl, double *xyz,
   ierr = redistribute_data(&nel, vl, el, part, nv, lelt, &comm);
   if (ierr != 0)
     goto err;
+
+  parrsb_check_tagged_partitions(el, vl, nel, nv, 10, &comm, 1);
 
   if (*loglevel > 2)
     print_part_stat(vl, nel, nv, cext);
