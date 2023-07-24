@@ -1,4 +1,4 @@
       integer nelx,nely,nelz,nlayers,nassembly
-      integer nel_per_layer,nel_per_assembly
+      integer nel_per_layer,nel_per_assembly,group_size
       common /gfdmic/ nelx,nely,nelz,nlayers,nassembly,
-     $                nel_per_layer,nel_per_assembly
+     $                nel_per_layer,nel_per_assembly,group_size

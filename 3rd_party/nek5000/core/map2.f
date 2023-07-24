@@ -163,7 +163,7 @@ c-----------------------------------------------------------------------
 
       common /scrcg/ xyz(ldim*lelt*2**ldim)
 
-      integer cnt,algo,layer_id,assembly_id
+      integer cnt,algo,layer_id,assembly_id,group_id
       integer opt_parrsb(3),opt_parmetis(10),tag(lelt)
 
       logical ifbswap, ifread_con
@@ -229,7 +229,8 @@ c fluid elements
             layer_id=(eid8(j)-1)/nel_per_layer
             assembly_id=eid8(j)-1-layer_id*nel_per_layer
             assembly_id=assembly_id/nel_per_assembly
-            tag(j)=assembly_id+nassembly*layer_id
+            group_id=layer_id/group_size
+            tag(j)=assembly_id+nassembly*group_id
          endif
          ii = ii + (nlv+1)
       enddo
@@ -288,7 +289,8 @@ c solid elements
                layer_id=(eid8(j)-nelgv-1)/nel_per_layer
                assembly_id=eid8(j)-nelgv-1-layer_id*nel_per_layer
                assembly_id=assembly_id/nel_per_assembly
-               tag(j)=assembly_id+nassembly*layer_id
+               group_id=layer_id/group_size
+               tag(j)=assembly_id+nassembly*group_id
             endif
             ii = ii + (nlv+1)
          enddo
