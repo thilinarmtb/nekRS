@@ -10,8 +10,8 @@
 
 #include "inipp.hpp"
 #include "nrs.hpp"
-#include <filesystem>
-namespace fs = std::filesystem;
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
 
 #define UPPER(a)  { transform(a.begin(), a.end(), a.begin(), std::ptr_fun<int, int>(std::toupper)); \
 }

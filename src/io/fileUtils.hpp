@@ -2,15 +2,15 @@
 #define nekrs_ioutils_hpp_
 
 #include "nrs.hpp"
-#include <filesystem>
-namespace fs = std::filesystem;
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
 
 void fileSync(const char *file);
 void copyFile(const char *srcName, const char* destName);
 bool isFileEmpty(const char *file);
 bool isFileNewer(const char *file1, const char* file2);
 bool fileExists(const char *file);
-void fileBcast(const std::filesystem::path &srcPath, const std::filesystem::path &dstPath,
+void fileBcast(const fs::path &srcPath, const fs::path &dstPath,
                MPI_Comm comm, int verbose);
 
 #endif

@@ -80,7 +80,7 @@
 #include <fcntl.h>
 #include <chrono>
 #include <csignal>
-#include <filesystem>
+#include <experimental/filesystem>
 
 #include "inipp.hpp"
 #include "stacktrace.hpp"
@@ -204,7 +204,7 @@ cmdOptions* processCmdLineOptions(int argc, char** argv, const MPI_Comm &comm)
 
     if(cmdOpt->setupFile.empty() && cmdOpt->multiSessionFile.empty()){
       int cnt = 0;
-      for (auto &p : std::filesystem::directory_iterator{"."})
+      for (auto &p : std::experimental::filesystem::directory_iterator{"."})
       {
         if (p.path().extension() == ".par") {
           cmdOpt->setupFile.assign(p.path().stem().string());
@@ -273,7 +273,7 @@ inipp::Ini* readPar(const std::string &_setupFile, MPI_Comm comm)
 
   int err = 0;
   if (rank == 0) {
-    if (!std::filesystem::exists(setupFile)) {
+    if (!std::experimental::filesystem::exists(setupFile)) {
       std::cerr << "Cannot find setup file " << setupFile << std::endl;
       err++;
     }

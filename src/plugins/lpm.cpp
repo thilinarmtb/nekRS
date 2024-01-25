@@ -8,7 +8,7 @@
 #include <numeric>
 #include <regex>
 #include <tuple>
-#include <filesystem>
+#include <experimental/filesystem>
 #include "tuple_for_each.hpp"
 #include "gslib.h" // needed for sarray_transfer
 
@@ -2024,7 +2024,7 @@ auto readHeader(const std::string& restartFile)
 
 void lpm_t::restart(const std::string& restartFile)
 {
-  bool fileExists = std::filesystem::exists(restartFile);
+  bool fileExists = std::experimental::filesystem::exists(restartFile);
   nrsCheck(!fileExists, platform->comm.mpiComm, EXIT_FAILURE, "Restart file %s does not exist!\n", restartFile.c_str());
 
   constexpr long long int dim = 3;

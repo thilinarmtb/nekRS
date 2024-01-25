@@ -1,4 +1,4 @@
-#include <filesystem>
+#include <experimental/filesystem>
 #include "nrssys.hpp"
 #include "compileKernels.hpp"
 #include "udf.hpp"
@@ -28,7 +28,7 @@ occa::properties compileUDFKernels()
   kernelInfoBC["includes"] += bcDataFile.c_str();
 
   kernelInfoBC["okl/include_paths"].asArray();
-  kernelInfoBC["okl/include_paths"] += std::string(std::filesystem::current_path()).c_str();
+  kernelInfoBC["okl/include_paths"] += std::string(std::experimental::filesystem::current_path()).c_str();
 
   if (udf.loadKernels) {
     udf.loadKernels(kernelInfoBC);

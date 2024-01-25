@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include <filesystem>
+#include <experimental/filesystem>
 #include <functional>
 #include "nrs.hpp"
 #include "setup.hpp"
@@ -19,7 +19,7 @@
 #include "hypreWrapper.hpp"
 #include "hypreWrapperDevice.hpp"
 
-namespace fs = std::filesystem;
+namespace fs = std::experimental::filesystem;
 
 // extern variable from nrssys.hpp
 platform_t *platform;
@@ -291,7 +291,7 @@ void setup(MPI_Comm commg_in,
     int rankLocal;
     MPI_Comm_rank(platform->comm.mpiCommLocal, &rankLocal);
     if (rankLocal == 0) {
-      for (auto &entry : std::filesystem::directory_iterator(platform->tmpDir))
+      for (auto &entry : fs::directory_iterator(platform->tmpDir))
         fs::remove_all(entry.path());
     }
   }
