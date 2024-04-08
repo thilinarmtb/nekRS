@@ -2,6 +2,7 @@
 #define _CRS_BOX_IMPL_HPP_
 
 #include "crs_box.hpp"
+#include "xxt.hpp"
 
 #define BOX_DOMAIN_SWITCH(dom, macro)                                          \
   {                                                                            \

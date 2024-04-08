@@ -36,5 +36,4 @@ set(ELLIPTIC_SOURCES
         ${ELLIPTIC_SOURCE_DIR}/amgSolver/box/crs_box.cpp
         ${ELLIPTIC_SOURCE_DIR}/amgSolver/box/crs_box_csr.cpp
         ${ELLIPTIC_SOURCE_DIR}/amgSolver/box/crs_box_timer.cpp
-        ${ELLIPTIC_SOURCE_DIR}/amgSolver/box/crs_box_local.cpp
-        ${ELLIPTIC_SOURCE_DIR}/amgSolver/box/crs_xxt.cpp)
+        ${ELLIPTIC_SOURCE_DIR}/amgSolver/box/crs_box_local.cpp)

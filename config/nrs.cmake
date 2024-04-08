@@ -116,8 +116,10 @@ set(NRS_INCLUDE
     ${ELLIPTIC_SOURCE_DIR}/amgSolver/amgx
     ${ELLIPTIC_SOURCE_DIR}/amgSolver/box
     ${ELLIPTIC_SOURCE_DIR}/MG
-    ${CMAKE_BINARY_DIR}/3rd_party/lapack/include
-    3rd_party/gemv/include
+    # FIXME: Ideally, these need not be included manually.
+    ${CMAKE_SOURCE_DIR}/3rd_party/lapack/include
+    ${CMAKE_SOURCE_DIR}/3rd_party/gemv/include
+    ${CMAKE_SOURCE_DIR}/3rd_party/xxt/include
 )
 
 set_property(

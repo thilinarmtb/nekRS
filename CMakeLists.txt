@@ -314,24 +314,27 @@ if (ENABLE_CVODE)
   set(BUILD_SHARED_LIBS OFF)
 endif()
 
-# blas + lapack
-add_subdirectory(3rd_party/lapack)
-
 # nek5000 dependencies
 include(config/nek5000.cmake)
-
-# gemv
-add_subdirectory(3rd_party/gemv)
 
 # nrs
 include(config/nrs.cmake)
 
+# blas + lapack
+add_subdirectory(3rd_party/lapack)
+
+# XXT
+add_subdirectory(3rd_party/xxt)
+
+# gemv
+add_subdirectory(3rd_party/gemv)
+
 # Link dependencies
 target_link_libraries(nekrs-lib PUBLIC libocca PRIVATE nekrs-hypre
-  nekrs-hypre-device gs ${GSLIB} gemv blas lapack lapacke ${CMAKE_DL_LIBS})
+  nekrs-hypre-device xxt gs ${GSLIB} gemv blas lapack lapacke ${CMAKE_DL_LIBS})
 if (NEKRS_BUILD_FLOAT)
   target_link_libraries(nekrs-lib-fp32 PUBLIC libocca PRIVATE
-    nekrs-hypre nekrs-hypre-device gs ${GSLIB} gemv blas lapack lapacke
+    nekrs-hypre nekrs-hypre-device xxt gs ${GSLIB} gemv blas lapack lapacke
     ${CMAKE_DL_LIBS})
 endif()
 

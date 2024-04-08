@@ -1,5 +1,6 @@
 #include "nekrs_crs.hpp"
 #include "crs_box.hpp"
+#include "xxt.hpp"
 
 struct crs {
   uint un, type;
