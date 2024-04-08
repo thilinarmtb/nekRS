@@ -331,10 +331,10 @@ add_subdirectory(3rd_party/gemv)
 
 # Link dependencies
 target_link_libraries(nekrs-lib PUBLIC libocca PRIVATE nekrs-hypre
-  nekrs-hypre-device xxt gs ${GSLIB} gemv blas lapack lapacke ${CMAKE_DL_LIBS})
+  nekrs-hypre-device xxt gs gemv blas lapack lapacke ${CMAKE_DL_LIBS})
 if (NEKRS_BUILD_FLOAT)
   target_link_libraries(nekrs-lib-fp32 PUBLIC libocca PRIVATE
-    nekrs-hypre nekrs-hypre-device xxt gs ${GSLIB} gemv blas lapack lapacke
+    nekrs-hypre nekrs-hypre-device xxt gs gemv blas lapack lapacke
     ${CMAKE_DL_LIBS})
 endif()
 
