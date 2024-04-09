@@ -147,7 +147,7 @@ void asm1_solve(void *x_, struct box *box, occa::memory &o_r) {
   //     hipMemcpy(h_x, d_x, nr * sizeof(float), hipMemcpyDeviceToHost));
 
   gemv_run(o_cx.ptr(), o_x.ptr(), gemv);
-  gemv_copy_((void *)h_x, o_x.ptr(), sizeof(float) * nr, GEMV_D2H);
+  gemv_copy((void *)h_x, o_x.ptr(), sizeof(float) * nr, GEMV_D2H);
 
   float *x = (float *)x_;
   for (uint i = 0; i < box->un; i++) {
@@ -187,9 +187,9 @@ void asm1_solve(void *x_, struct box *box, const void *r_) {
   // check_hip_runtime(
   //     hipMemcpy(h_x, d_x, nr * sizeof(float), hipMemcpyDeviceToHost));
 
-  gemv_copy_(o_r.ptr(), (void *)h_r, sizeof(float) * nr, GEMV_H2D);
+  gemv_copy(o_r.ptr(), (void *)h_r, sizeof(float) * nr, GEMV_H2D);
   gemv_run(o_r.ptr(), o_x.ptr(), gemv);
-  gemv_copy_((void *)h_x, o_x.ptr(), sizeof(float) * nr, GEMV_D2H);
+  gemv_copy((void *)h_x, o_x.ptr(), sizeof(float) * nr, GEMV_D2H);
 
   float *x = (float *)x_;
   for (uint i = 0; i < box->sn; i++) {
