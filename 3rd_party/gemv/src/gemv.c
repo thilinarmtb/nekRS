@@ -127,8 +127,8 @@ void gemv_device_free_(void **ptr) {
   gemv_log(GEMV_INFO, "gemv_device_free: done.");
 }
 
-void gemv_copy_(void *dest, const void *src, size_t size,
-                const gemv_direction_t direction) {
+void gemv_copy(void *dest, const void *src, size_t size,
+               const gemv_direction_t direction) {
   gemv_log(GEMV_INFO,
            "gemv_copy: dest = %p, src = %p, size = %zu, direction = %d", dest,
            src, size, direction);
@@ -136,7 +136,7 @@ void gemv_copy_(void *dest, const void *src, size_t size,
   gemv_log(GEMV_INFO, "gemv_copy: done.");
 }
 
-void gemv_run_(void *y, const void *x, const struct gemv_t *gemv) {
+void gemv_run(void *y, const void *x, const struct gemv_t *gemv) {
   gemv_log(GEMV_INFO, "gemv_run: y = %p, x = %p", y, x);
   gemv_backend_run(y, x, gemv);
   gemv_log(GEMV_INFO, "gemv_run: done.");

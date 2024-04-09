@@ -15,7 +15,7 @@ set(GEMV_MAX_BACKEND_LENGTH 16)
 
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
-set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
+set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_SOURCE_DIR}/cmake/")
 
 set(CMAKE_SKIP_BUILD_RPATH FALSE)
 set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
@@ -79,9 +79,9 @@ macro(gemv_add_binary file_name)
   install(TARGETS ${target} DESTINATION bin)
 endmacro()
 
-gemv_add_binary(bin/gemv.c)
+install(TARGETS gemv DESTINATION lib PUBLIC_HEADER DESTINATION include)
 
-install(TARGETS gemv LIBRARY DESTINATION lib PUBLIC_HEADER DESTINATION include)
+gemv_add_binary(bin/gemv.c)
 
 # Add clang-format as a custom target if available.
 find_program(CLANG_FORMAT NAMES clang-format)

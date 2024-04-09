@@ -3,6 +3,7 @@
 
 #include "gemv-backend.h"
 
+#include <cuda.h>
 #include <cuda_runtime.h>
 
 static inline void check_cuda_runtime_(cudaError_t err, const char *file,
@@ -14,6 +15,10 @@ static inline void check_cuda_runtime_(cudaError_t err, const char *file,
 }
 
 #define check_cuda_runtime(call) check_cuda_runtime_((call), __FILE__, __LINE__)
+
+static void cuda_malloc(void **ptr, const size_t size) {
+  check_cuda_runtime(cudaMalloc(ptr, size));
+}
 
 static inline void cuda_copy(void *dest, const void *src, size_t count,
                              gemv_direction_t direction) {
