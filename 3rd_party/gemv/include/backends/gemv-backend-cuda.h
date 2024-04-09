@@ -20,6 +20,8 @@ static void cuda_malloc(void **ptr, const size_t size) {
   check_cuda_runtime(cudaMalloc(ptr, size));
 }
 
+static void cuda_free(void *ptr) { check_cuda_runtime(cudaFree(ptr)); }
+
 static inline void cuda_copy(void *dest, const void *src, size_t count,
                              gemv_direction_t direction) {
   enum cudaMemcpyKind kind = cudaMemcpyDefault;

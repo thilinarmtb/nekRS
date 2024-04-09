@@ -21,32 +21,7 @@ static hipFunction_t kernel = NULL;
 static int block_size = 32;
 static int kernel_id = 1;
 
-const char *gemv_kernels[] = {
-    "extern \"C\" __global__ void gemv(%s *y, const %s *A, const %s *x, const "
-    "unsigned M, "
-    "const unsigned N) {\n"
-    "  int row = blockIdx.x * blockDim.x + threadIdx.x;\n"
-    "  if (row < M) {\n"
-    "    %s dot = 0;\n"
-    "    for (int i = 0; i < N; i++)\n"
-    "      dot += A[row * N + i] * x[i];\n"
-    "    y[row] = dot;\n"
-    "  }\n"
-    "}\n",
-    "#define BLOCK_SIZE %d\n"
-    "\n"
-    "extern \"C\" __global__ void gemv(%s *y, const %s *A, const %s *x, const "
-    "unsigned M, "
-    "const unsigned N) {\n"
-    "  int row = blockIdx.x * blockDim.x + threadIdx.x;\n"
-    "  if (row < M) {\n"
-    "    %s dot = 0;\n"
-    "    for (int i = 0; i < N; i++) {\n"
-    "      dot += A[row * N + i] * x[i];\n"
-    "    }\n"
-    "    y[row] = dot;\n"
-    "  }\n"
-    "}\n"};
+#include "gemv-backend-unified-cuda-hip-kernels.h"
 
 static void hip_run(void *d_y, const void *d_x, const struct gemv_t *gemv) {
   if (!initialized)
