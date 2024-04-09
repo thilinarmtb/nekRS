@@ -1,8 +1,8 @@
 #include <cstdio>
 #include <cstdlib>
 
-#include <lapacke.h>
-#include <platform.hpp>
+#include "lapacke.h"
+#include "platform.hpp"
 
 #include "crs_box_impl.hpp"
 #include "gemv.h"
@@ -103,7 +103,7 @@ static void setup_gemv(const struct csr *A) {
   }
 
   gemv = gemv_init(NULL, NULL);
-  gemv_set_matrix(gemv, A_inv);
+  gemv_set_matrix(gemv, A->nr, A->nr, A_inv);
   gemv_set_backend(gemv, platform->device.mode().c_str());
 
   free(B), free(A_inv);
@@ -146,8 +146,8 @@ void asm1_solve(void *x_, struct box *box, occa::memory &o_r) {
   // check_hip_runtime(
   //     hipMemcpy(h_x, d_x, nr * sizeof(float), hipMemcpyDeviceToHost));
 
-  gemv_run(o_x.ptr(), gemv, o_cx.ptr());
-  gemv_copy(h_x, o_x.ptr(), sizeof(float) * nr, GEMV_D2H);
+  gemv_run(o_cx.ptr(), o_x.ptr(), gemv);
+  gemv_copy_((void *)h_x, o_x.ptr(), sizeof(float) * nr, GEMV_D2H);
 
   float *x = (float *)x_;
   for (uint i = 0; i < box->un; i++) {
@@ -187,9 +187,9 @@ void asm1_solve(void *x_, struct box *box, const void *r_) {
   // check_hip_runtime(
   //     hipMemcpy(h_x, d_x, nr * sizeof(float), hipMemcpyDeviceToHost));
 
-  gemv_copy(o_r.ptr(), h_r, sizeof(float) * nr, GEMV_H2D);
-  gemv_run(o_x.ptr(), gemv, o_r.ptr());
-  gemv_copy(h_x, o_x.ptr(), sizeof(float) * nr, GEMV_D2H);
+  gemv_copy_(o_r.ptr(), (void *)h_r, sizeof(float) * nr, GEMV_H2D);
+  gemv_run(o_r.ptr(), o_x.ptr(), gemv);
+  gemv_copy_((void *)h_x, o_x.ptr(), sizeof(float) * nr, GEMV_D2H);
 
   float *x = (float *)x_;
   for (uint i = 0; i < box->sn; i++) {

@@ -13,8 +13,9 @@
 #include <cblas.h>
 #include <lapacke.h>
 #endif
-
 #include "gslib.h"
+
+#include "xxt.hpp"
 
 struct cholmod_csr *fac_A_ll = NULL;
 double *A_ll_inv = NULL, *y_inv = NULL;
