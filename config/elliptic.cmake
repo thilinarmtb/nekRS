@@ -25,15 +25,15 @@ set(ELLIPTIC_SOURCES
         ${ELLIPTIC_SOURCE_DIR}/ellipticSolve.cpp
         ${ELLIPTIC_SOURCE_DIR}/ellipticOgs.cpp
         ${ELLIPTIC_SOURCE_DIR}/ellipticSetup.cpp
+        ${ELLIPTIC_SOURCE_DIR}/ellipticZeroMean.cpp
         ${ELLIPTIC_SOURCE_DIR}/SEMFEMSolver.cpp
         ${ELLIPTIC_SOURCE_DIR}/SEMFEMSolverBuild.cpp
         ${ELLIPTIC_SOURCE_DIR}/MG/coarseLevel.cpp
         ${ELLIPTIC_SOURCE_DIR}/MG/level.cpp
         ${ELLIPTIC_SOURCE_DIR}/MG/MGSolver.cpp
-        ${ELLIPTIC_SOURCE_DIR}/ellipticZeroMean.cpp
-        ${ELLIPTIC_SOURCE_DIR}/amgSolver/box/nekrs_crs_aux.cpp
-        ${ELLIPTIC_SOURCE_DIR}/amgSolver/box/nekrs_crs.cpp
-        ${ELLIPTIC_SOURCE_DIR}/amgSolver/box/crs_box.cpp
-        ${ELLIPTIC_SOURCE_DIR}/amgSolver/box/crs_box_csr.cpp
-        ${ELLIPTIC_SOURCE_DIR}/amgSolver/box/crs_box_timer.cpp
-        ${ELLIPTIC_SOURCE_DIR}/amgSolver/box/crs_box_local.cpp)
+        ${ELLIPTIC_SOURCE_DIR}/schwarzSolver/nekrs_crs_aux.cpp
+        ${ELLIPTIC_SOURCE_DIR}/schwarzSolver/nekrs_crs.cpp
+        ${ELLIPTIC_SOURCE_DIR}/schwarzSolver/crs_box.cpp
+        ${ELLIPTIC_SOURCE_DIR}/schwarzSolver/crs_box_csr.cpp
+        ${ELLIPTIC_SOURCE_DIR}/schwarzSolver/crs_box_timer.cpp
+        ${ELLIPTIC_SOURCE_DIR}/schwarzSolver/crs_box_local.cpp)
