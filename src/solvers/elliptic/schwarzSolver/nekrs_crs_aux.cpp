@@ -3,7 +3,7 @@
 #include "nekrs_crs.hpp"
 
 static void check_alloc_(void *ptr, const char *file, unsigned line) {
-  if (ptr) return;
+  if (ptr) { return; }
   fprintf(stderr, "check_alloc failure: %s:%d\n", file, line);
   exit(EXIT_FAILURE);
 }
@@ -29,16 +29,17 @@ static void gen_crs_basis(double *b, int j_, dfloat *z, int Nq, int Np) {
   memcpy(zt, z0, Nq * sizeof(double));
 
   int jj = j_ + 1;
-  if (jj % 2 == 0) memcpy(zr, z1, Nq * sizeof(double));
-  if (jj == 3 || jj == 4 || jj == 7 || jj == 8)
+  if (jj % 2 == 0) { memcpy(zr, z1, Nq * sizeof(double)); }
+  if (jj == 3 || jj == 4 || jj == 7 || jj == 8) {
     memcpy(zs, z1, Nq * sizeof(double));
-  if (jj > 4) memcpy(zt, z1, Nq * sizeof(double));
+  }
+  if (jj > 4) { memcpy(zt, z1, Nq * sizeof(double)); }
 
   for (int k = 0; k < Nq; k++) {
     for (int j = 0; j < Nq; j++) {
       for (int i = 0; i < Nq; i++) {
         int n = i + Nq * j + Nq * Nq * k + j_ * Np;
-        b[n] = zr[i] * zs[j] * zt[k];
+        b[n]  = zr[i] * zs[j] * zt[k];
       }
     }
   }
@@ -48,30 +49,33 @@ static void gen_crs_basis(double *b, int j_, dfloat *z, int Nq, int Np) {
 
 static void get_local_crs_galerkin(double *a, int nc, mesh_t *mf,
                                    elliptic_t *ef) {
-  int nelt = mf->Nelements, Np = mf->Np;
+  int    nelt = mf->Nelements, Np = mf->Np;
   size_t size = nelt * Np;
   size_t ncrs = nc * Np;
 
   double *b_ = tcalloc(double, ncrs);
-  dfloat *b = tcalloc(dfloat, ncrs);
+  dfloat *b  = tcalloc(dfloat, ncrs);
   check_alloc(b_), check_alloc(b);
-  for (int j = 0; j < nc; j++) gen_crs_basis(b_, j, mf->gllz, mf->Nq, mf->Np);
+  for (int j = 0; j < nc; j++) {
+    gen_crs_basis(b_, j, mf->gllz, mf->Nq, mf->Np);
+  }
 
-  for (size_t i = 0; i < ncrs; i++) b[i] = b_[i];
+  for (size_t i = 0; i < ncrs; i++) { b[i] = b_[i]; }
 
   dfloat *u = tcalloc(dfloat, size);
   dfloat *w = tcalloc(dfloat, size);
   check_alloc(u), check_alloc(w);
 
-  occa::memory o_u = platform->device.malloc(size * sizeof(dfloat), u);
-  occa::memory o_w = platform->device.malloc(size * sizeof(dfloat), w);
+  occa::memory o_u   = platform->device.malloc(size * sizeof(dfloat), u);
+  occa::memory o_w   = platform->device.malloc(size * sizeof(dfloat), w);
   occa::memory o_upf = platform->device.malloc(size * sizeof(pfloat));
   occa::memory o_wpf = platform->device.malloc(size * sizeof(pfloat));
 
   int i, j, k, e;
   for (j = 0; j < nc; j++) {
-    for (e = 0; e < nelt; e++)
+    for (e = 0; e < nelt; e++) {
       memcpy(&u[e * Np], &b[j * Np], Np * sizeof(dfloat));
+    }
 
     o_u.copyFrom(u);
     platform->copyDfloatToPfloatKernel(mf->Nlocal, o_u, o_upf);
@@ -83,8 +87,9 @@ static void get_local_crs_galerkin(double *a, int nc, mesh_t *mf,
     for (e = 0; e < nelt; e++) {
       for (i = 0; i < nc; i++) {
         a[i + j * nc + e * nc * nc] = 0.0;
-        for (k = 0; k < Np; k++)
+        for (k = 0; k < Np; k++) {
           a[i + j * nc + e * nc * nc] += b[k + i * Np] * w[k + e * Np];
+        }
       }
     }
   }
@@ -113,21 +118,21 @@ void jl_setup_aux(uint *ntot_, ulong **gids_, uint *nnz_, uint **ia_,
   uint nelt = meshf->Nelements, nc = mesh->Np;
 
   // Set global ids: copy and apply the mask
-  uint ntot = *ntot_ = nelt * nc;
+  uint   ntot = *ntot_ = nelt * nc;
   ulong *gids = *gids_ = tcalloc(ulong, ntot);
   check_alloc(gids);
 
-  for (int j = 0; j < nelt * nc; j++) gids[j] = mesh->globalIds[j];
+  for (int j = 0; j < nelt * nc; j++) { gids[j] = mesh->globalIds[j]; }
 
   if (elliptic->Nmasked) {
     dlong *mask_ids = (dlong *)calloc(elliptic->Nmasked, sizeof(dlong));
     elliptic->o_maskIds.copyTo(mask_ids, elliptic->Nmasked * sizeof(dlong));
-    for (int n = 0; n < elliptic->Nmasked; n++) gids[mask_ids[n]] = 0;
+    for (int n = 0; n < elliptic->Nmasked; n++) { gids[mask_ids[n]] = 0; }
     free(mask_ids);
   }
 
   // Set coarse matrix
-  uint nnz = *nnz_ = nc * nc * nelt;
+  uint    nnz = *nnz_ = nc * nc * nelt;
   double *a = *a_ = tcalloc(double, nnz);
   check_alloc(a);
 

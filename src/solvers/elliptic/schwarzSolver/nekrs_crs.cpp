@@ -3,12 +3,12 @@
 #include "xxt.hpp"
 
 struct crs {
-  uint un, type;
+  uint        un, type;
   struct comm c;
-  gs_dom dom;
-  float *wrk;
-  void *x, *rhs;
-  void *solver;
+  gs_dom      dom;
+  float      *wrk;
+  void       *x, *rhs;
+  void       *solver;
 };
 
 static struct crs *crs = NULL;
@@ -28,12 +28,12 @@ void jl_setup(uint type, uint n, const ulong *id, uint nnz, const uint *Ai,
 
   comm_init(&crs->c, comm);
   crs->type = type;
-  crs->un = n;
+  crs->un   = n;
 
-  crs->dom = dom;
+  crs->dom        = dom;
   const char *tmp = getenv("NEKRS_CRS_DOM");
-  if (tmp && strncmp(tmp, "gs_double", 32) == 0) crs->dom = gs_double;
-  if (tmp && strncmp(tmp, "gs_float", 32) == 0) crs->dom = gs_float;
+  if (tmp && strncmp(tmp, "gs_double", 32) == 0) { crs->dom = gs_double; }
+  if (tmp && strncmp(tmp, "gs_float", 32) == 0) { crs->dom = gs_float; }
 
   size_t usize;
   switch (dom) {
@@ -45,7 +45,7 @@ void jl_setup(uint type, uint n, const ulong *id, uint nnz, const uint *Ai,
     break;
   }
 
-  crs->x = calloc(usize, 2 * n);
+  crs->x   = calloc(usize, 2 * n);
   crs->rhs = (void *)((char *)crs->x + n * usize);
   crs->wrk = tcalloc(float, crs->un);
 
@@ -105,7 +105,7 @@ void jl_solve2(occa::memory o_x, occa::memory o_rhs) {
 }
 
 void jl_free() {
-  if (crs == NULL) return;
+  if (crs == NULL) { return; }
 
   switch (crs->type) {
   case JL_XXT: crs_xxt_free((struct xxt *)crs->solver); break;
