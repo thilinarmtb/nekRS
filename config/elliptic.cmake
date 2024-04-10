@@ -33,7 +33,7 @@ set(ELLIPTIC_SOURCES
         ${ELLIPTIC_SOURCE_DIR}/MG/MGSolver.cpp
         ${ELLIPTIC_SOURCE_DIR}/schwarzSolver/nekrs_crs_aux.cpp
         ${ELLIPTIC_SOURCE_DIR}/schwarzSolver/nekrs_crs.cpp
-        ${ELLIPTIC_SOURCE_DIR}/schwarzSolver/crs_box.cpp
-        ${ELLIPTIC_SOURCE_DIR}/schwarzSolver/crs_box_csr.cpp
-        ${ELLIPTIC_SOURCE_DIR}/schwarzSolver/crs_box_timer.cpp
-        ${ELLIPTIC_SOURCE_DIR}/schwarzSolver/crs_box_local.cpp)
+        ${ELLIPTIC_SOURCE_DIR}/schwarzSolver/schwarzSolve.cpp
+        ${ELLIPTIC_SOURCE_DIR}/schwarzSolver/schwarzSolveCSR.cpp
+        ${ELLIPTIC_SOURCE_DIR}/schwarzSolver/schwarzSolveTimer.cpp
+        ${ELLIPTIC_SOURCE_DIR}/schwarzSolver/schwarzSolveLocal.cpp)

@@ -3,8 +3,7 @@
 
 #include "lapacke.h"
 #include "platform.hpp"
-
-#include "crs_box_impl.hpp"
+#include "schwarzSolveImpl.hpp"
 #include "gemv.h"
 
 static uint gs_n;

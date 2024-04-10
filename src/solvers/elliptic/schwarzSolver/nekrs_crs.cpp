@@ -1,5 +1,5 @@
 #include "nekrs_crs.hpp"
-#include "crs_box.hpp"
+#include "schwarzSolve.hpp"
 #include "xxt.hpp"
 
 struct crs {

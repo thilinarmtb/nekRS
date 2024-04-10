@@ -11,7 +11,7 @@
 
 // FIXME: Get rid of this once box solver is ported to C.
 #include "nekInterfaceAdapter.hpp"
-#include "crs_box_impl.hpp"
+#include "schwarzSolveImpl.hpp"
 
 void box_debug(const int verbose, const char *fmt, ...) {
   va_list args;

@@ -1,5 +1,5 @@
-#if !defined(_CRS_BOX_HPP_)
-#define _CRS_BOX_HPP_
+#if !defined(__SCHWARZ_SOLVE_HPP__)
+#define __SCHWARZ_SOLVE_HPP__
 
 // Inclusion of occa.hpp here is a workaround for a weird issue. Fix it before
 // releasing rhe code.

@@ -1,5 +1,6 @@
-#include "crs_box_impl.hpp"
 #include <stdlib.h>
+
+#include "schwarzSolveImpl.hpp"
 
 struct csr *csr_setup(const unsigned nz, const unsigned *const ia,
                       const unsigned *const ja, const double *const va,

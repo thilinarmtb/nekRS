@@ -1,8 +1,7 @@
-#if !defined(_CRS_BOX_IMPL_HPP_)
-#define _CRS_BOX_IMPL_HPP_
+#if !defined(__SCHWARZ_SOLVE_IMPL_HPP__)
+#define __SCHWARZ_SOLVE_IMPL_HPP__
 
-#include "crs_box.hpp"
-#include "xxt.hpp"
+#include "schwarzSolve.hpp"
 
 #define BOX_DOMAIN_SWITCH(dom, macro)                                          \
   {                                                                            \

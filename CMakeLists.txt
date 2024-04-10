@@ -379,7 +379,8 @@ endif()
 ###############################################################################
 # install
 ###############################################################################
-set_target_properties(nekrs-bin PROPERTIES INSTALL_RPATH "${CMAKE_INSTALL_RPATH};${PLUGINS_RPATH}")
+set_target_properties(nekrs-bin PROPERTIES INSTALL_RPATH
+  "${CMAKE_INSTALL_RPATH};${PLUGINS_RPATH}")
 
 if(OCCA_CUDA_ENABLED)
   set(BACKEND_DEFAULT "CUDA" CACHE STRING "Default occa mode")
@@ -409,7 +410,7 @@ file(MAKE_DIRECTORY ${CMAKE_INSTALL_PREFIX}/3rd_party)
 
 install(
   TARGETS nekrs-lib nekrs-hypre nekrs-hypre-device nekrs-bin axhelm-bin
-  advsub-bin fdm-bin
+    advsub-bin fdm-bin
   RUNTIME DESTINATION bin
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
