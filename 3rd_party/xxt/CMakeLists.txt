@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.22)
 project(xxt VERSION 0.0.1 DESCRIPTION
   "XXT: A highly scalable sparse direct solver" LANGUAGES C CXX)
 
+# Build options:
+option(ENABLE_BLAS "Enable BLAS support" OFF)
+
 set(XXT_SOURCES src/xxt.cpp)
 
 add_library(xxt SHARED ${XXT_SOURCES})
@@ -14,6 +17,13 @@ target_compile_options(xxt PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX>
   $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -pedantic -Wno-unused-function
   -Wno-unused-parameter -Wno-stringop-overflow>)
 target_link_libraries(xxt PRIVATE gs)
+
+if (ENABLE_BLAS)
+  find_package(LAPACK REQUIRED)
+  find_package(BLAS REQUIRED)
+  target_compile_definitions(xxt PRIVATE ENABLE_BLAS)
+  target_link_libraries(xxt PRIVATE LAPACK::LAPACK BLAS::BLAS)
+endif()
 
 install(TARGETS xxt LIBRARY DESTINATION lib PUBLIC_HEADER DESTINATION include)
 
