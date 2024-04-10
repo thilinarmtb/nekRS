@@ -4,11 +4,10 @@
 
 static inline void check_hipblas_(hipblasStatus_t status, const char *file,
                                   const unsigned line) {
-  char *error = NULL;
-
 #define add_case(A)                                                            \
   case A: error = #A; break
 
+  char *error = NULL;
   // clang-format off
   switch (status) {
   case HIPBLAS_STATUS_SUCCESS: return; break;
