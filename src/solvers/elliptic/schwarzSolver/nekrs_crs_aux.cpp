@@ -3,8 +3,7 @@
 #include "nekrs_crs.hpp"
 
 static void check_alloc_(void *ptr, const char *file, unsigned line) {
-  if (ptr)
-    return;
+  if (ptr) return;
   fprintf(stderr, "check_alloc failure: %s:%d\n", file, line);
   exit(EXIT_FAILURE);
 }
@@ -30,12 +29,10 @@ static void gen_crs_basis(double *b, int j_, dfloat *z, int Nq, int Np) {
   memcpy(zt, z0, Nq * sizeof(double));
 
   int jj = j_ + 1;
-  if (jj % 2 == 0)
-    memcpy(zr, z1, Nq * sizeof(double));
+  if (jj % 2 == 0) memcpy(zr, z1, Nq * sizeof(double));
   if (jj == 3 || jj == 4 || jj == 7 || jj == 8)
     memcpy(zs, z1, Nq * sizeof(double));
-  if (jj > 4)
-    memcpy(zt, z1, Nq * sizeof(double));
+  if (jj > 4) memcpy(zt, z1, Nq * sizeof(double));
 
   for (int k = 0; k < Nq; k++) {
     for (int j = 0; j < Nq; j++) {
@@ -58,11 +55,9 @@ static void get_local_crs_galerkin(double *a, int nc, mesh_t *mf,
   double *b_ = tcalloc(double, ncrs);
   dfloat *b = tcalloc(dfloat, ncrs);
   check_alloc(b_), check_alloc(b);
-  for (int j = 0; j < nc; j++)
-    gen_crs_basis(b_, j, mf->gllz, mf->Nq, mf->Np);
+  for (int j = 0; j < nc; j++) gen_crs_basis(b_, j, mf->gllz, mf->Nq, mf->Np);
 
-  for (size_t i = 0; i < ncrs; i++)
-    b[i] = b_[i];
+  for (size_t i = 0; i < ncrs; i++) b[i] = b_[i];
 
   dfloat *u = tcalloc(dfloat, size);
   dfloat *w = tcalloc(dfloat, size);
@@ -122,14 +117,12 @@ void jl_setup_aux(uint *ntot_, ulong **gids_, uint *nnz_, uint **ia_,
   ulong *gids = *gids_ = tcalloc(ulong, ntot);
   check_alloc(gids);
 
-  for (int j = 0; j < nelt * nc; j++)
-    gids[j] = mesh->globalIds[j];
+  for (int j = 0; j < nelt * nc; j++) gids[j] = mesh->globalIds[j];
 
   if (elliptic->Nmasked) {
     dlong *mask_ids = (dlong *)calloc(elliptic->Nmasked, sizeof(dlong));
     elliptic->o_maskIds.copyTo(mask_ids, elliptic->Nmasked * sizeof(dlong));
-    for (int n = 0; n < elliptic->Nmasked; n++)
-      gids[mask_ids[n]] = 0;
+    for (int n = 0; n < elliptic->Nmasked; n++) gids[mask_ids[n]] = 0;
     free(mask_ids);
   }
 

@@ -17,8 +17,7 @@ struct csr *csr_setup(const unsigned nz, const unsigned *const ia,
   struct mij_t mij;
   for (uint z = 0; z < nz; z++) {
     sint i = u2c[ia[z]], j = u2c[ja[z]];
-    if (i < 0 || j < 0 || fabs(va[z]) < tol)
-      continue;
+    if (i < 0 || j < 0 || fabs(va[z]) < tol) continue;
     mij.r = i, mij.c = j, mij.v = va[z];
     array_cat(struct mij_t, &mijs, &mij, 1);
   }
@@ -47,8 +46,7 @@ struct csr *csr_setup(const unsigned nz, const unsigned *const ia,
   A->base = 0;
   A->nr = 0;
   struct mij_t *pa = (struct mij_t *)aijs.ptr;
-  if (aijs.n > 0)
-    A->nr = pa[aijs.n - 1].r + 1;
+  if (aijs.n > 0) A->nr = pa[aijs.n - 1].r + 1;
 
   // Allocate the csr data structures
   A->offs = tcalloc(uint, A->nr + 1);
@@ -70,8 +68,7 @@ struct csr *csr_setup(const unsigned nz, const unsigned *const ia,
 }
 
 void csr_free(struct csr *A) {
-  if (!A)
-    return;
+  if (!A) return;
   free(A->offs), free(A->cols), free(A->vals);
   free(A);
 }

@@ -1,10 +1,10 @@
 #include <cstdio>
 #include <cstdlib>
 
+#include "gemv.h"
 #include "lapacke.h"
 #include "platform.hpp"
 #include "schwarzSolveImpl.hpp"
-#include "gemv.h"
 
 static uint gs_n;
 static occa::memory o_gs_off, o_gs_idx;
@@ -19,8 +19,7 @@ static void setup_gather_rhs(int un, int *u2c) {
 
   struct map_t m;
   for (uint i = 0; i < un; i++) {
-    if (u2c[i] < 0)
-      continue;
+    if (u2c[i] < 0) continue;
     m.u = i, m.c = u2c[i];
     array_cat(struct map_t, &map, &m, 1);
   }
@@ -97,8 +96,7 @@ static void setup_gemv(const struct csr *A) {
 
   double *A_inv = tcalloc(double, A->nr * A->nr);
   for (uint i = 0; i < A->nr; i++) {
-    for (uint j = 0; j < A->nr; j++)
-      A_inv[i * A->nr + j] = B[i * A->nr + j];
+    for (uint j = 0; j < A->nr; j++) A_inv[i * A->nr + j] = B[i * A->nr + j];
   }
 
   gemv = gemv_init(NULL, NULL);
@@ -135,8 +133,7 @@ void asm1_solve(void *x_, struct box *box, occa::memory &o_r) {
     MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
   }
 
-  if (gs_n == 0)
-    return;
+  if (gs_n == 0) return;
 
   platform->gatherRHSKernel(gs_n, o_gs_off, o_gs_idx, o_r, o_cx);
 
@@ -156,8 +153,7 @@ void asm1_solve(void *x_, struct box *box, occa::memory &o_r) {
       x[i] = 0;
   }
 
-  for (uint i = box->un; i < box->sn; i++)
-    x[i] = 0;
+  for (uint i = box->un; i < box->sn; i++) x[i] = 0;
 }
 
 void asm1_solve(void *x_, struct box *box, const void *r_) {
@@ -166,15 +162,12 @@ void asm1_solve(void *x_, struct box *box, const void *r_) {
     MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
   }
 
-  if (gs_n == 0)
-    return;
+  if (gs_n == 0) return;
 
   float *r = (float *)r_;
-  for (uint i = 0; i < nr; i++)
-    h_r[i] = 0;
+  for (uint i = 0; i < nr; i++) h_r[i] = 0;
   for (uint i = 0; i < box->sn; i++) {
-    if (box->u2c[i] >= 0)
-      h_r[box->u2c[i]] += r[i];
+    if (box->u2c[i] >= 0) h_r[box->u2c[i]] += r[i];
   }
 
   // check_hip_runtime(

@@ -8,8 +8,7 @@ static unsigned num_solves = 0;
 
 inline void timer_init() {
   num_solves = 0;
-  for (unsigned i = 0; i < TIME_MAX; i++)
-    time_box[i] = 0;
+  for (unsigned i = 0; i < TIME_MAX; i++) time_box[i] = 0;
 
   timer_on = 1;
 }
@@ -29,8 +28,7 @@ inline void timer_toc(BOX_METRIC m) {
 }
 
 inline void timer_dump(struct comm *c, unsigned interval) {
-  if (!timer_on || (num_solves != interval))
-    return;
+  if (!timer_on || (num_solves != interval)) return;
 
   struct btime_t {
     double tbox[TIME_MAX];
@@ -41,8 +39,7 @@ inline void timer_dump(struct comm *c, unsigned interval) {
   array_init(struct btime_t, &btime, 1);
 
   struct btime_t bt = {.p = 0};
-  for (unsigned i = 0; i < TIME_MAX; i++)
-    bt.tbox[i] = time_box[i];
+  for (unsigned i = 0; i < TIME_MAX; i++) bt.tbox[i] = time_box[i];
   array_cat(struct btime_t, &btime, &bt, 1);
 
   struct crystal cr;
@@ -78,14 +75,12 @@ inline void timer_dump(struct comm *c, unsigned interval) {
 }
 
 inline void timer_print(struct comm *c, unsigned interval) {
-  if (!timer_on)
-    return;
+  if (!timer_on) return;
 
   num_solves++;
   if (0 == num_solves % interval) {
     double max[TIME_MAX], wrk[2 * TIME_MAX];
-    for (unsigned i = 0; i < TIME_MAX; i++)
-      max[i] = time_box[i];
+    for (unsigned i = 0; i < TIME_MAX; i++) max[i] = time_box[i];
     comm_allreduce(c, gs_double, gs_max, max, TIME_MAX, wrk);
     if (c->id == 0) {
       printf("box copy_rhs          : %e\n", time_box[0] / num_solves);

@@ -32,19 +32,13 @@ void jl_setup(uint type, uint n, const ulong *id, uint nnz, const uint *Ai,
 
   crs->dom = dom;
   const char *tmp = getenv("NEKRS_CRS_DOM");
-  if (tmp && strncmp(tmp, "gs_double", 32) == 0)
-    crs->dom = gs_double;
-  if (tmp && strncmp(tmp, "gs_float", 32) == 0)
-    crs->dom = gs_float;
+  if (tmp && strncmp(tmp, "gs_double", 32) == 0) crs->dom = gs_double;
+  if (tmp && strncmp(tmp, "gs_float", 32) == 0) crs->dom = gs_float;
 
   size_t usize;
   switch (dom) {
-  case gs_double:
-    usize = sizeof(double);
-    break;
-  case gs_float:
-    usize = sizeof(float);
-    break;
+  case gs_double: usize = sizeof(double); break;
+  case gs_float: usize = sizeof(float); break;
   default:
     fprintf(stderr, "jl_setup: unknown gs_dom = %d.\n", dom);
     MPI_Abort(comm, EXIT_FAILURE);
@@ -64,20 +58,15 @@ void jl_setup(uint type, uint n, const ulong *id, uint nnz, const uint *Ai,
     crs->solver =
         (void *)crs_box_setup(n, id, nnz, Ai, Aj, A, null, c, inter_comm, dom);
     break;
-  default:
-    break;
+  default: break;
   }
 }
 
 #define DOMAIN_SWITCH(dom, macro)                                              \
   {                                                                            \
     switch (dom) {                                                             \
-    case gs_double:                                                            \
-      macro(double);                                                           \
-      break;                                                                   \
-    case gs_float:                                                             \
-      macro(float);                                                            \
-      break;                                                                   \
+    case gs_double: macro(double); break;                                      \
+    case gs_float: macro(float); break;                                        \
     }                                                                          \
   }
 
@@ -86,8 +75,7 @@ void jl_solve(occa::memory o_x, occa::memory o_rhs) {
 #define copy_from_buf(T)                                                       \
   {                                                                            \
     T *rhs = (T *)crs->rhs;                                                    \
-    for (uint i = 0; i < crs->un; i++)                                         \
-      rhs[i] = crs->wrk[i];                                                    \
+    for (uint i = 0; i < crs->un; i++) rhs[i] = crs->wrk[i];                   \
   }
   DOMAIN_SWITCH(crs->dom, copy_from_buf);
 #undef copy_from_buf
@@ -99,15 +87,13 @@ void jl_solve(occa::memory o_x, occa::memory o_rhs) {
   case JL_BOX:
     crs_box_solve(crs->x, (struct box *)crs->solver, crs->rhs);
     break;
-  default:
-    break;
+  default: break;
   }
 
 #define copy_to_buf(T)                                                         \
   {                                                                            \
     T *x = (T *)crs->x;                                                        \
-    for (uint i = 0; i < crs->un; i++)                                         \
-      crs->wrk[i] = x[i];                                                      \
+    for (uint i = 0; i < crs->un; i++) crs->wrk[i] = x[i];                     \
   }
   DOMAIN_SWITCH(crs->dom, copy_to_buf);
 #undef copy_to_buf
@@ -119,18 +105,12 @@ void jl_solve2(occa::memory o_x, occa::memory o_rhs) {
 }
 
 void jl_free() {
-  if (crs == NULL)
-    return;
+  if (crs == NULL) return;
 
   switch (crs->type) {
-  case JL_XXT:
-    crs_xxt_free((struct xxt *)crs->solver);
-    break;
-  case JL_BOX:
-    crs_box_free((struct box *)crs->solver);
-    break;
-  default:
-    break;
+  case JL_XXT: crs_xxt_free((struct xxt *)crs->solver); break;
+  case JL_BOX: crs_box_free((struct box *)crs->solver); break;
+  default: break;
   }
 
   comm_free(&crs->c);

@@ -6,12 +6,8 @@
 #define BOX_DOMAIN_SWITCH(dom, macro)                                          \
   {                                                                            \
     switch (dom) {                                                             \
-    case gs_double:                                                            \
-      macro(double);                                                           \
-      break;                                                                   \
-    case gs_float:                                                             \
-      macro(float);                                                            \
-      break;                                                                   \
+    case gs_double: macro(double); break;                                      \
+    case gs_float: macro(float); break;                                        \
     }                                                                          \
   }
 
