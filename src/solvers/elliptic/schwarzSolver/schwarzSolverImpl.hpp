@@ -36,7 +36,7 @@ private:
   val_t          *A, *x, *rhs, *inv_mul;
   buffer          bfr;
   struct gs_data *gsh;
-  LocalSolver_t  *local_solver;
+  LocalSolver_t<val_t>  *local_solver;
 };
 
 #endif // __SCHWARZ_SOLVE_IMPL_HPP__

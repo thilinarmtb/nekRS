@@ -1,9 +1,6 @@
 #if !defined(__LOCAL_SOLVER_HPP__)
 #define __LOCAL_SOLVER_HPP__
 
-#include <cstdlib>
-#include <string>
-
 #include "gslib.h"
 
 enum class Algorithm_t { Gemv, Xxt, Cholmod };
@@ -19,7 +16,7 @@ public:
   virtual ~AlgorithmInterface_t() = default;
 };
 
-class LocalSolver_t {
+template <typename val_t> class LocalSolver_t {
 public:
   LocalSolver_t();
 

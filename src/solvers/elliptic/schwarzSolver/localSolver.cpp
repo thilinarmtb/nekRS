@@ -1,10 +1,14 @@
 #include <math.h>
+#include <stdlib.h>
 
 #include "algorithmGemv.hpp"
 
 #include "localSolver.hpp"
 
-LocalSolver_t::LocalSolver_t() {
+template class LocalSolver_t<float>;
+template class LocalSolver_t<double>;
+
+template <typename val_t> LocalSolver_t<val_t>::LocalSolver_t() {
   input_size      = 0;
   compressed_size = 0;
   num_rows        = 0;
@@ -15,9 +19,11 @@ LocalSolver_t::LocalSolver_t() {
   buffer_init(&bfr, 1024);
 }
 
-void LocalSolver_t::SetupAlgorithm(const Algorithm_t algorithm,
-                                   const gs_dom dom, const std::string &backend,
-                                   const int device_id) {
+template <typename val_t>
+void LocalSolver_t<val_t>::SetupAlgorithm(const Algorithm_t  algorithm,
+                                          const gs_dom       dom,
+                                          const std::string &backend,
+                                          const int          device_id) {
   switch (algorithm) {
   case Algorithm_t::Gemv: solver = new AlgorithmGemv_t{}; break;
   case Algorithm_t::Xxt: break;
@@ -29,9 +35,10 @@ void LocalSolver_t::SetupAlgorithm(const Algorithm_t algorithm,
                 device_id);
 }
 
-void LocalSolver_t::SetupCSRMatrix(const slong *vtx, const uint nnz,
-                                   const uint *ia, const uint *ja,
-                                   const double *va, const double tol) {
+template <typename val_t>
+void LocalSolver_t<val_t>::SetupCSRMatrix(const slong *vtx, const uint nnz,
+                                          const uint *ia, const uint *ja,
+                                          const double *va, const double tol) {
   typedef struct {
     uint   r, c;
     double v;
@@ -93,7 +100,8 @@ void LocalSolver_t::SetupCSRMatrix(const slong *vtx, const uint nnz,
   array_free(&assembled_entries);
 }
 
-void LocalSolver_t::SetupUserToCompressMap(const slong *vtx) {
+template <typename val_t>
+void LocalSolver_t<val_t>::SetupUserToCompressMap(const slong *vtx) {
   typedef struct {
     ulong id;
     uint  idx;
@@ -136,11 +144,13 @@ void LocalSolver_t::SetupUserToCompressMap(const slong *vtx) {
   array_free(&vids);
 }
 
-void LocalSolver_t::Setup(const uint input_size_, const slong *vtx,
-                          const uint nnz, const uint *ia, const uint *ja,
-                          const double *va, const double tol, const gs_dom dom,
-                          const Algorithm_t  algorithm,
-                          const std::string &backend, const int device_id) {
+template <typename val_t>
+void LocalSolver_t<val_t>::Setup(const uint input_size_, const slong *vtx,
+                                 const uint nnz, const uint *ia, const uint *ja,
+                                 const double *va, const double tol,
+                                 const gs_dom dom, const Algorithm_t algorithm,
+                                 const std::string &backend,
+                                 const int          device_id) {
   input_size = input_size_;
 
   SetupUserToCompressMap(vtx);
@@ -150,12 +160,13 @@ void LocalSolver_t::Setup(const uint input_size_, const slong *vtx,
   SetupAlgorithm(algorithm, dom, backend, device_id);
 }
 
-void LocalSolver_t::Solve(void *x, const void *rhs) {
+template <typename val_t>
+void LocalSolver_t<val_t>::Solve(void *x, const void *rhs) {
   // TODO: Apply u_to_c mapping.
   solver->Solve(x, rhs);
 }
 
-LocalSolver_t::~LocalSolver_t() {
+template <typename val_t> LocalSolver_t<val_t>::~LocalSolver_t() {
   delete[] row_offsets, col_indices, values, u_to_c;
   buffer_free(&bfr);
   delete solver;

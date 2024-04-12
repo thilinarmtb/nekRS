@@ -52,7 +52,7 @@ void SchwarzSolverImpl_t<val_t>::SetupLocalSolver(const slong       *vtx,
       }
     }
   }
-  local_solver = new LocalSolver_t{};
+  local_solver = new LocalSolver_t<val_t>{};
   local_solver->Setup(shared_size, vtx, nnz, ia, ja, va, tol, dom,
                       Algorithm_t::Gemv, backend, device_id);
   delete[] ia, ja;
