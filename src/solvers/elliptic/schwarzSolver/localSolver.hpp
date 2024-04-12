@@ -8,8 +8,8 @@ enum class Algorithm_t { Gemv, Xxt, Cholmod };
 template <typename val_t> class AlgorithmInterface_t {
 public:
   virtual void Setup(const uint num_rows, uint *row_offsets, uint *col_indices,
-                     double *values, const gs_dom dom,
-                     const std::string &backend, const int device_id) = 0;
+                     double *values, const std::string &backend,
+                     const int device_id) = 0;
 
   virtual void Solve(val_t *x, const val_t *rhs) = 0;
 
@@ -22,8 +22,8 @@ public:
 
   void Setup(const uint input_size, const slong *vtx, const uint nnz,
              const uint *ia, const uint *ja, const double *va, const double tol,
-             const gs_dom dom, const Algorithm_t algorithm,
-             const std::string &backend, const int device_id);
+             const Algorithm_t algorithm, const std::string &backend,
+             const int device_id);
 
   void Solve(val_t *x, const val_t *rhs);
 
@@ -35,8 +35,8 @@ private:
   void SetupCSRMatrix(const slong *vtx, const uint nnz, const uint *ia,
                       const uint *ja, const double *va, const double tol);
 
-  void SetupAlgorithm(const Algorithm_t algorithm, const gs_dom dom,
-                      const std::string &backend, const int device_id);
+  void SetupAlgorithm(const Algorithm_t algorithm, const std::string &backend,
+                      const int device_id);
 
 private:
   uint                         input_size, compressed_size, num_rows;

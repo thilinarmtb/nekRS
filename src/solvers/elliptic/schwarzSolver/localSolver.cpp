@@ -18,7 +18,6 @@ template <typename val_t> LocalSolver_t<val_t>::LocalSolver_t() {
 
 template <typename val_t>
 void LocalSolver_t<val_t>::SetupAlgorithm(const Algorithm_t  algorithm,
-                                          const gs_dom       dom,
                                           const std::string &backend,
                                           const int          device_id) {
   switch (algorithm) {
@@ -28,8 +27,7 @@ void LocalSolver_t<val_t>::SetupAlgorithm(const Algorithm_t  algorithm,
   default: break;
   }
 
-  solver->Setup(num_rows, row_offsets, col_indices, values, dom, backend,
-                device_id);
+  solver->Setup(num_rows, row_offsets, col_indices, values, backend, device_id);
 }
 
 template <typename val_t>
@@ -145,7 +143,7 @@ template <typename val_t>
 void LocalSolver_t<val_t>::Setup(const uint input_size_, const slong *vtx,
                                  const uint nnz, const uint *ia, const uint *ja,
                                  const double *va, const double tol,
-                                 const gs_dom dom, const Algorithm_t algorithm,
+                                 const Algorithm_t  algorithm,
                                  const std::string &backend,
                                  const int          device_id) {
   input_size = input_size_;
@@ -154,7 +152,7 @@ void LocalSolver_t<val_t>::Setup(const uint input_size_, const slong *vtx,
 
   SetupCSRMatrix(vtx, nnz, ia, ja, va, tol);
 
-  SetupAlgorithm(algorithm, dom, backend, device_id);
+  SetupAlgorithm(algorithm, backend, device_id);
 }
 
 template <typename val_t>

@@ -11,7 +11,7 @@ public:
   AlgorithmGemv_t();
 
   void Setup(const uint num_rows, uint *row_offsets, uint *col_indices,
-             double *values, const gs_dom dom, const std::string &backend,
+             double *values, const std::string &backend,
              const int device_id) override;
 
   void Solve(val_t *x, const val_t *rhs) override;
@@ -20,22 +20,19 @@ public:
 
 private:
   struct gemv_t *gemv;
-  gs_dom         dom;
   size_t         size;
-  val_t         *h_r, *h_x;
   void          *d_r, *d_x;
 };
 
-template <typename val_t>
-AlgorithmGemv_t<val_t>::AlgorithmGemv_t() { gemv = nullptr; }
+template <typename val_t> AlgorithmGemv_t<val_t>::AlgorithmGemv_t() {
+  gemv = nullptr;
+}
 
 template <typename val_t>
 void AlgorithmGemv_t<val_t>::Setup(const uint num_rows, uint *row_offsets,
                                    uint *col_indices, double *values,
-                                   const gs_dom       dom_,
                                    const std::string &backend,
                                    const int          device_id) {
-  dom  = dom_;
   size = sizeof(val_t) * num_rows;
 
   double *A = new double[num_rows * num_rows];
@@ -59,8 +56,6 @@ void AlgorithmGemv_t<val_t>::Setup(const uint num_rows, uint *row_offsets,
   gemv_set_backend(gemv, backend.c_str());
   gemv_set_matrix(gemv, num_rows, num_rows, A);
 
-  h_r = new val_t[num_rows];
-  h_x = new val_t[num_rows];
   gemv_device_malloc(&d_r, size);
   gemv_device_malloc(&d_x, size);
 
@@ -74,9 +69,7 @@ void AlgorithmGemv_t<val_t>::Solve(val_t *x, const val_t *rhs) {
   gemv_copy(d_x, (void *)rhs, size, GEMV_H2D);
 }
 
-template <typename val_t>
-AlgorithmGemv_t<val_t>::~AlgorithmGemv_t() {
-  delete[] h_r, h_x;
+template <typename val_t> AlgorithmGemv_t<val_t>::~AlgorithmGemv_t() {
   gemv_device_free(&d_r);
   gemv_device_free(&d_x);
   gemv_finalize(&gemv);
