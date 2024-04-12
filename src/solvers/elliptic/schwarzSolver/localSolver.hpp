@@ -47,4 +47,7 @@ private:
   AlgorithmInterface_t *solver;
 };
 
+template class LocalSolver_t<float>;
+template class LocalSolver_t<double>;
+
 #endif // __LOCAL_SOLVER_HPP__

@@ -5,9 +5,6 @@
 
 #include "localSolver.hpp"
 
-template class LocalSolver_t<float>;
-template class LocalSolver_t<double>;
-
 template <typename val_t> LocalSolver_t<val_t>::LocalSolver_t() {
   input_size      = 0;
   compressed_size = 0;

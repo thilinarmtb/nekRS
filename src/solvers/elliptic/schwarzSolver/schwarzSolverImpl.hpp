@@ -39,4 +39,7 @@ private:
   LocalSolver_t<val_t>  *local_solver;
 };
 
+template class SchwarzSolverImpl_t<float>;
+template class SchwarzSolverImpl_t<double>;
+
 #endif // __SCHWARZ_SOLVE_IMPL_HPP__

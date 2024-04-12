@@ -4,9 +4,6 @@
 
 #include "schwarzSolverImpl.hpp"
 
-template class SchwarzSolverImpl_t<float>;
-template class SchwarzSolverImpl_t<double>;
-
 template <typename val_t>
 void SchwarzSolverImpl_t<val_t>::SetupCoarseMatrix(const double *A_) {
   const size_t N = shared_size * crs_size;
