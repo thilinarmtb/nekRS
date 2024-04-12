@@ -22,7 +22,7 @@ void LocalSolver_t<val_t>::SetupAlgorithm(const Algorithm_t  algorithm,
                                           const std::string &backend,
                                           const int          device_id) {
   switch (algorithm) {
-  case Algorithm_t::Gemv: solver = new AlgorithmGemv_t{}; break;
+  case Algorithm_t::Gemv: solver = new AlgorithmGemv_t<val_t>{}; break;
   case Algorithm_t::Xxt: break;
   case Algorithm_t::Cholmod: break;
   default: break;
@@ -158,7 +158,7 @@ void LocalSolver_t<val_t>::Setup(const uint input_size_, const slong *vtx,
 }
 
 template <typename val_t>
-void LocalSolver_t<val_t>::Solve(void *x, const void *rhs) {
+void LocalSolver_t<val_t>::Solve(val_t *x, const val_t *rhs) {
   // TODO: Apply u_to_c mapping.
   solver->Solve(x, rhs);
 }

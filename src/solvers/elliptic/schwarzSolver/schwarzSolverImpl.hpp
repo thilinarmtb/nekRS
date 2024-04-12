@@ -31,12 +31,12 @@ private:
   void CoarseAverage(void *vector);
 
 private:
-  size_t          user_size, shared_size, crs_size;
-  gs_dom          dom;
-  val_t          *A, *x, *rhs, *inv_mul;
-  buffer          bfr;
-  struct gs_data *gsh;
-  LocalSolver_t<val_t>  *local_solver;
+  size_t                user_size, shared_size, crs_size;
+  gs_dom                dom;
+  val_t                *A, *x, *rhs, *inv_mul;
+  buffer                bfr;
+  struct gs_data       *gsh;
+  LocalSolver_t<val_t> *local_solver;
 };
 
 template class SchwarzSolverImpl_t<float>;
