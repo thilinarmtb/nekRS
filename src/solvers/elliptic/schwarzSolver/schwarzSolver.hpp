@@ -13,8 +13,8 @@ public:
   virtual void Setup(const long long *vtx, const double *xyz,
                      const double *amat, const double *mask,
                      const int *frontier, const int num_elements,
-                     const double tol, const MPI_Comm comm,
-                     const std::string &backend, const int device_id) = 0;
+                     const MPI_Comm comm, const std::string &backend,
+                     const int device_id) = 0;
 
   virtual void Solve(occa::memory &o_x, const occa::memory &o_rhs) = 0;
 

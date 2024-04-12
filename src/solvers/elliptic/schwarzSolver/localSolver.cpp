@@ -1,5 +1,6 @@
-#include <math.h>
-#include <stdlib.h>
+#include <cassert>
+#include <cmath>
+#include <cstdlib>
 
 #include "algorithmGemv.hpp"
 
@@ -8,32 +9,17 @@
 template <typename val_t> LocalSolver_t<val_t>::LocalSolver_t() {
   input_size      = 0;
   compressed_size = 0;
-  num_rows        = 0;
-  row_offsets     = nullptr;
-  col_indices     = nullptr;
-  values          = nullptr;
+  solver          = nullptr;
   u_to_c          = nullptr;
-  buffer_init(&bfr, 1024);
 }
 
 template <typename val_t>
-void LocalSolver_t<val_t>::SetupAlgorithm(const Algorithm_t  algorithm,
-                                          const std::string &backend,
-                                          const int          device_id) {
-  switch (algorithm) {
-  case Algorithm_t::Gemv: solver = new AlgorithmGemv_t<val_t>{}; break;
-  case Algorithm_t::Xxt: break;
-  case Algorithm_t::Cholmod: break;
-  default: break;
-  }
-
-  solver->Setup(num_rows, row_offsets, col_indices, values, backend, device_id);
-}
-
-template <typename val_t>
-void LocalSolver_t<val_t>::SetupCSRMatrix(const slong *vtx, const uint nnz,
-                                          const uint *ia, const uint *ja,
-                                          const double *va, const double tol) {
+void LocalSolver_t<val_t>::SetupSolver(const slong *vtx, const uint nnz,
+                                       const uint *ia, const uint *ja,
+                                       const double      *va,
+                                       const Algorithm_t  algorithm,
+                                       const std::string &backend,
+                                       const int device_id, buffer *bfr) {
   typedef struct {
     uint   r, c;
     double v;
@@ -46,7 +32,7 @@ void LocalSolver_t<val_t>::SetupCSRMatrix(const slong *vtx, const uint nnz,
     entry_t eij;
     for (uint z = 0; z < nnz; z++) {
       sint i = u_to_c[ia[z]], j = u_to_c[ja[z]];
-      if (i < 0 || j < 0 || fabs(va[z]) < tol) continue;
+      if (i < 0 || j < 0) continue;
       eij.r = i, eij.c = j, eij.v = va[z];
       array_cat(entry_t, &entries, &eij, 1);
     }
@@ -59,7 +45,7 @@ void LocalSolver_t<val_t>::SetupCSRMatrix(const slong *vtx, const uint nnz,
   {
     array_init(entry_t, &assembled_entries, nnz);
 
-    sarray_sort_2(entry_t, entries.ptr, entries.n, r, 0, c, 0, &bfr);
+    sarray_sort_2(entry_t, entries.ptr, entries.n, r, 0, c, 0, bfr);
 
     entry_t *pe = (entry_t *)entries.ptr;
     uint     s  = 0;
@@ -75,17 +61,22 @@ void LocalSolver_t<val_t>::SetupCSRMatrix(const slong *vtx, const uint nnz,
   }
   array_free(&entries);
 
+  if (assembled_entries.n == 0) return;
+
+  // Allocate the csr data structures
+  uint   *row_offsets = new uint[compressed_size];
+  uint   *col_indices = new uint[assembled_entries.n];
+  double *values      = new double[assembled_entries.n];
+
   // Convert the assembled matrix to a CSR matrix.
   {
     entry_t *pc = (entry_t *)assembled_entries.ptr;
-    if (assembled_entries.n > 0) num_rows = pc[assembled_entries.n - 1].r + 1;
+    // Sanity check.
+    uint num_rows = pc[assembled_entries.n - 1].r + 1;
+    assert(num_rows == compressed_size);
 
-    // Allocate the csr data structures
-    row_offsets    = new uint[num_rows];
-    col_indices    = new uint[assembled_entries.n];
-    values         = new double[assembled_entries.n];
     row_offsets[0] = 0;
-    for (uint r = 0, i = 0; r < num_rows; r++) {
+    for (uint r = 0, i = 0; r < compressed_size; r++) {
       uint j = i;
       while (j < assembled_entries.n && pc[j].r == r)
         col_indices[j] = pc[j].c, values[j] = pc[j].v, j++;
@@ -93,10 +84,23 @@ void LocalSolver_t<val_t>::SetupCSRMatrix(const slong *vtx, const uint nnz,
     }
   }
   array_free(&assembled_entries);
+
+  switch (algorithm) {
+  case Algorithm_t::Gemv: solver = new AlgorithmGemv_t<val_t>{}; break;
+  case Algorithm_t::Xxt: break;
+  case Algorithm_t::Cholmod: break;
+  default: break;
+  }
+
+  solver->Setup(compressed_size, row_offsets, col_indices, values, backend,
+                device_id);
+
+  delete[] row_offsets, col_indices, values;
 }
 
 template <typename val_t>
-void LocalSolver_t<val_t>::SetupUserToCompressMap(const slong *vtx) {
+void LocalSolver_t<val_t>::SetupUserToCompressMap(const slong *vtx,
+                                                  buffer      *bfr) {
   typedef struct {
     ulong id;
     uint  idx;
@@ -114,22 +118,20 @@ void LocalSolver_t<val_t>::SetupUserToCompressMap(const slong *vtx) {
     }
   }
 
+  compressed_size = 0;
   {
-    sarray_sort(vertex_id_t, vids.ptr, vids.n, id, 1, &bfr);
+    sarray_sort(vertex_id_t, vids.ptr, vids.n, id, 1, bfr);
 
-    vertex_id_t *pv           = (vertex_id_t *)vids.ptr;
-    ulong        id           = 0;
-    sint         num_compress = 0;
+    vertex_id_t *pv = (vertex_id_t *)vids.ptr;
+    ulong        id = 0;
     for (uint i = 0; i < vids.n; i++) {
-      if (pv[i].id != id) id = pv[i].id, num_compress++;
-      pv[i].perm = num_compress - 1;
+      if (pv[i].id != id) id = pv[i].id, compressed_size++;
+      pv[i].perm = (sint)compressed_size - 1;
     }
-
-    compressed_size = num_compress;
   }
 
   {
-    sarray_sort(vertex_id_t, vids.ptr, vids.n, idx, 0, &bfr);
+    sarray_sort(vertex_id_t, vids.ptr, vids.n, idx, 0, bfr);
 
     const vertex_id_t *pv = (const vertex_id_t *)vids.ptr;
     u_to_c                = new sint[input_size];
@@ -142,17 +144,19 @@ void LocalSolver_t<val_t>::SetupUserToCompressMap(const slong *vtx) {
 template <typename val_t>
 void LocalSolver_t<val_t>::Setup(const uint input_size_, const slong *vtx,
                                  const uint nnz, const uint *ia, const uint *ja,
-                                 const double *va, const double tol,
-                                 const Algorithm_t  algorithm,
+                                 const double *va, const Algorithm_t algorithm,
                                  const std::string &backend,
                                  const int          device_id) {
   input_size = input_size_;
 
-  SetupUserToCompressMap(vtx);
+  buffer bfr;
+  buffer_init(&bfr, 1024);
 
-  SetupCSRMatrix(vtx, nnz, ia, ja, va, tol);
+  SetupUserToCompressMap(vtx, &bfr);
 
-  SetupAlgorithm(algorithm, backend, device_id);
+  SetupSolver(vtx, nnz, ia, ja, va, algorithm, backend, device_id, &bfr);
+
+  buffer_free(&bfr);
 }
 
 template <typename val_t>
@@ -162,7 +166,6 @@ void LocalSolver_t<val_t>::Solve(val_t *x, const val_t *rhs) {
 }
 
 template <typename val_t> LocalSolver_t<val_t>::~LocalSolver_t() {
-  delete[] row_offsets, col_indices, values, u_to_c;
-  buffer_free(&bfr);
+  delete[] u_to_c;
   delete solver;
 }

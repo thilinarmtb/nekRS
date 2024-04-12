@@ -21,7 +21,7 @@ public:
   LocalSolver_t();
 
   void Setup(const uint input_size, const slong *vtx, const uint nnz,
-             const uint *ia, const uint *ja, const double *va, const double tol,
+             const uint *ia, const uint *ja, const double *va,
              const Algorithm_t algorithm, const std::string &backend,
              const int device_id);
 
@@ -30,20 +30,17 @@ public:
   ~LocalSolver_t();
 
 private:
-  void SetupUserToCompressMap(const slong *vtx);
+  void SetupUserToCompressMap(const slong *vtx, buffer *bfr);
 
-  void SetupCSRMatrix(const slong *vtx, const uint nnz, const uint *ia,
-                      const uint *ja, const double *va, const double tol);
-
-  void SetupAlgorithm(const Algorithm_t algorithm, const std::string &backend,
-                      const int device_id);
+  void SetupSolver(const slong *vtx, const uint nnz, const uint *ia,
+                   const uint *ja, const double *va,
+                   const Algorithm_t algorithm, const std::string &backend,
+                   const int device_id, buffer *bfr);
 
 private:
-  uint                         input_size, compressed_size, num_rows;
-  uint                        *row_offsets, *col_indices;
-  double                      *values;
+  uint                         input_size, compressed_size;
   sint                        *u_to_c;
-  buffer                       bfr;
+  val_t                       *x, *rhs;
   AlgorithmInterface_t<val_t> *solver;
 };
 

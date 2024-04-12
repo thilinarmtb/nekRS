@@ -13,7 +13,7 @@ public:
 
   void Setup(const long long *vtx, const double *xyz, const double *amat,
              const double *mask, const int *frontier, const int num_elements,
-             const double tol, const MPI_Comm comm, const std::string &backend,
+             const MPI_Comm comm, const std::string &backend,
              const int device_id) override;
 
   void Solve(occa::memory &o_x, const occa::memory &o_rhs) override;
@@ -21,7 +21,7 @@ public:
   ~SchwarzSolverImpl_t();
 
 private:
-  void SetupLocalSolver(const slong *vtx, const double *va, const double tol,
+  void SetupLocalSolver(const slong *vtx, const double *va,
                         const std::string &backend, const int device_id);
 
   void SetupCoarseAverage(const slong *vtx, const MPI_Comm comm);

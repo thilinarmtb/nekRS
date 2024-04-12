@@ -24,8 +24,8 @@ SchwarzSolver_t::SchwarzSolver_t(const unsigned            num_dofs,
   solver->Setup(
       (const long long *)nekData.schwz_vtx, (const double *)nekData.schwz_xyz,
       (const double *)nekData.schwz_amat, (const double *)nekData.schwz_mask,
-      (const int *)nekData.schwz_frontier, *(nekData.schwz_ne), 1e-12, comm,
-      backend, device_id);
+      (const int *)nekData.schwz_frontier, *(nekData.schwz_ne), comm, backend,
+      device_id);
 }
 
 void SchwarzSolver_t::Solve(occa::memory &o_x, const occa::memory &o_rhs) {

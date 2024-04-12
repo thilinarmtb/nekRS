@@ -33,7 +33,6 @@ void SchwarzSolverImpl_t<val_t>::SetupCoarseAverage(const slong   *vtx,
 template <typename val_t>
 void SchwarzSolverImpl_t<val_t>::SetupLocalSolver(const slong       *vtx,
                                                   const double      *va,
-                                                  const double       tol,
                                                   const std::string &backend,
                                                   const int device_id) {
   // FIXME: The following should be part of the input.
@@ -50,7 +49,7 @@ void SchwarzSolverImpl_t<val_t>::SetupLocalSolver(const slong       *vtx,
     }
   }
   local_solver = new LocalSolver_t<val_t>{};
-  local_solver->Setup(shared_size, vtx, nnz, ia, ja, va, tol, Algorithm_t::Gemv,
+  local_solver->Setup(shared_size, vtx, nnz, ia, ja, va, Algorithm_t::Gemv,
                       backend, device_id);
   delete[] ia, ja;
 }
@@ -62,13 +61,10 @@ void SchwarzSolverImpl_t<val_t>::CoarseAverage(void *vector) {
 }
 
 template <typename val_t>
-void SchwarzSolverImpl_t<val_t>::Setup(const long long *vtx, const double *xyz,
-                                       const double *va, const double *mask,
-                                       const int *frontier,
-                                       const int num_elements, const double tol,
-                                       const MPI_Comm     comm,
-                                       const std::string &backend,
-                                       const int          device_id) {
+void SchwarzSolverImpl_t<val_t>::Setup(
+    const long long *vtx, const double *xyz, const double *va,
+    const double *mask, const int *frontier, const int num_elements,
+    const MPI_Comm comm, const std::string &backend, const int device_id) {
   slong *vtx_ll = new slong[shared_size];
   double maskm  = std::numeric_limits<double>::max();
   for (uint i = 0; i < shared_size; i++) {
@@ -82,7 +78,7 @@ void SchwarzSolverImpl_t<val_t>::Setup(const long long *vtx, const double *xyz,
   assert(null_space == 0);
 
   // Setup local Schwarz solver.
-  SetupLocalSolver(vtx_ll, va, tol, backend, device_id);
+  SetupLocalSolver(vtx_ll, va, backend, device_id);
 
   // Setup the gather-scatter handle for coarse average.
   SetupCoarseAverage(vtx_ll, comm);
