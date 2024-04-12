@@ -11,6 +11,8 @@ template <typename val_t> LocalSolver_t<val_t>::LocalSolver_t() {
   compressed_size = 0;
   solver          = nullptr;
   u_to_c          = nullptr;
+  x               = nullptr;
+  rhs             = nullptr;
 }
 
 template <typename val_t>
@@ -138,6 +140,9 @@ void LocalSolver_t<val_t>::SetupUserToCompressMap(const slong *vtx,
     for (uint i = 0; i < input_size; i++) u_to_c[i] = pv[i].perm;
   }
 
+  x   = new val_t[compressed_size];
+  rhs = new val_t[compressed_size];
+
   array_free(&vids);
 }
 
@@ -160,12 +165,22 @@ void LocalSolver_t<val_t>::Setup(const uint input_size_, const slong *vtx,
 }
 
 template <typename val_t>
-void LocalSolver_t<val_t>::Solve(val_t *x, const val_t *rhs) {
-  // TODO: Apply u_to_c mapping.
+void LocalSolver_t<val_t>::Solve(val_t *x_, const val_t *rhs_) {
+  for (uint i = 0; i < compressed_size; i++) rhs[i] = 0;
+  for (uint i = 0; i < input_size; i++)
+    if (u_to_c[i] >= 0) rhs[u_to_c[i]] += rhs_[i];
+
   solver->Solve(x, rhs);
+
+  for (uint i = 0; i < input_size; i++) {
+    if (u_to_c[i] >= 0)
+      x_[i] = x[u_to_c[i]];
+    else
+      x_[i] = 0;
+  }
 }
 
 template <typename val_t> LocalSolver_t<val_t>::~LocalSolver_t() {
-  delete[] u_to_c;
+  delete[] u_to_c, x, rhs;
   delete solver;
 }
