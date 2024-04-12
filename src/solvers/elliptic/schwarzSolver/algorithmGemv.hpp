@@ -57,8 +57,8 @@ void AlgorithmGemv_t::Setup(const uint num_rows, uint *row_offsets,
 
   h_r = new float[num_rows];
   h_x = new float[num_rows];
-  gemv_device_malloc_((void **)&d_r, size);
-  gemv_device_malloc_((void **)&d_x, size);
+  gemv_device_malloc((void **)&d_r, size);
+  gemv_device_malloc((void **)&d_x, size);
 
   delete[] A, pivots;
 }
@@ -71,7 +71,7 @@ void AlgorithmGemv_t::Solve(void *x, const void *rhs) {
 
 AlgorithmGemv_t::~AlgorithmGemv_t() {
   delete[] h_r, h_x;
-  gemv_device_free_(&d_r);
-  gemv_device_free_(&d_x);
+  gemv_device_free(&d_r);
+  gemv_device_free(&d_x);
   gemv_finalize(&gemv);
 }
