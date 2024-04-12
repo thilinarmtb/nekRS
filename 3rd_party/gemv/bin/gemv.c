@@ -19,7 +19,8 @@ int main(int argc, char *argv[]) {
   gemv_init_session(handle);
 
   double *x, *y;
-  gemv_device_malloc(&x, N), gemv_device_malloc(&y, N);
+  gemv_device_malloc((void **)&x, sizeof(double) * N);
+  gemv_device_malloc((void **)&y, sizeof(double) * N);
 
   gemv_copy(x, h_x, N, GEMV_H2D);
 
@@ -27,7 +28,8 @@ int main(int argc, char *argv[]) {
 
   gemv_copy(h_y, y, N, GEMV_D2H);
 
-  gemv_device_free(&x), gemv_device_free(&y);
+  gemv_device_free((void **)&x);
+  gemv_device_free((void **)&y);
 
   gemv_finalize_session();
 

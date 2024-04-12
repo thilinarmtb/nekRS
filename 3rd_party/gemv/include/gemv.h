@@ -42,12 +42,9 @@ GEMV_EXTERN void gemv_set_matrix(struct gemv_t *gemv, unsigned m, unsigned n,
 
 GEMV_EXTERN void gemv_init_session(const struct gemv_t *gemv);
 
-GEMV_EXTERN void gemv_device_malloc_(void **ptr, size_t size);
-#define gemv_device_malloc(ptr, n)                                             \
-  gemv_device_malloc_((void **)(ptr), sizeof(**(ptr)) * (n))
+GEMV_EXTERN void gemv_device_malloc(void **ptr, size_t size);
 
-GEMV_EXTERN void gemv_device_free_(void **ptr);
-#define gemv_device_free(ptr) gemv_device_free_((void **)(ptr))
+GEMV_EXTERN void gemv_device_free(void **ptr);
 
 typedef enum { GEMV_H2D = 0, GEMV_D2H = 1 } gemv_direction_t;
 GEMV_EXTERN void gemv_copy(void *dest, const void *src, size_t size,

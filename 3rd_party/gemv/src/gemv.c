@@ -115,13 +115,13 @@ void gemv_init_session(const struct gemv_t *gemv) {
   gemv_log(GEMV_INFO, "gemv_init_session: done.");
 }
 
-void gemv_device_malloc_(void **ptr, const size_t size) {
+void gemv_device_malloc(void **ptr, const size_t size) {
   gemv_log(GEMV_INFO, "gemv_device_malloc: size = %zu", size);
   gemv_backend_malloc(ptr, size);
   gemv_log(GEMV_INFO, "gemv_device_malloc: ptr = %p, done.", *ptr);
 }
 
-void gemv_device_free_(void **ptr) {
+void gemv_device_free(void **ptr) {
   gemv_log(GEMV_INFO, "gemv_device_free: ptr = %p", *ptr);
   gemv_backend_free(ptr);
   gemv_log(GEMV_INFO, "gemv_device_free: done.");
