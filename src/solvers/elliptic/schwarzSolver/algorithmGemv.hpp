@@ -7,6 +7,8 @@
 
 template <typename val_t>
 class AlgorithmGemv_t : public AlgorithmInterface_t<val_t> {
+  using vec_t = std::vector<val_t>;
+
 public:
   AlgorithmGemv_t();
 
@@ -14,7 +16,7 @@ public:
              double *values, const std::string &backend,
              const int device_id) override;
 
-  void Solve(val_t *x, const val_t *rhs) override;
+  void Solve(vec_t &x, const vec_t &rhs) override;
 
   ~AlgorithmGemv_t();
 
@@ -63,10 +65,10 @@ void AlgorithmGemv_t<val_t>::Setup(const uint num_rows, uint *row_offsets,
 }
 
 template <typename val_t>
-void AlgorithmGemv_t<val_t>::Solve(val_t *x, const val_t *rhs) {
-  gemv_copy(d_r, (void *)rhs, size, GEMV_H2D);
+void AlgorithmGemv_t<val_t>::Solve(vec_t &x, const vec_t &rhs) {
+  gemv_copy(d_r, rhs.data(), size, GEMV_H2D);
   gemv_run(d_x, d_r, gemv);
-  gemv_copy(d_x, (void *)rhs, size, GEMV_H2D);
+  gemv_copy(x.data(), d_x, size, GEMV_H2D);
 }
 
 template <typename val_t> AlgorithmGemv_t<val_t>::~AlgorithmGemv_t() {

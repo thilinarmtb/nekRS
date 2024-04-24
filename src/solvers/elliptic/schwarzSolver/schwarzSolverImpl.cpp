@@ -7,7 +7,7 @@
 template <typename val_t>
 void SchwarzSolverImpl_t<val_t>::SetupCoarseMatrix(const double *A_) {
   const size_t N = shared_size * crs_size;
-  A              = new val_t[N];
+  A.reserve(N);
   for (uint i = 0; i < N; i++) A[i] = A_[i];
 }
 
@@ -24,7 +24,7 @@ void SchwarzSolverImpl_t<val_t>::SetupCoarseAverage(const slong   *vtx,
   delete[] vtx_;
 
   for (uint i = 0; i < user_size; i++) inv_mul[i] = 1.0;
-  gs(inv_mul, dom, gs_add, 0, gsh, &bfr);
+  gs(inv_mul.data(), dom, gs_add, 0, gsh, &bfr);
   for (uint i = 0; i < shared_size; i++) inv_mul[i] = 1.0 / inv_mul[i];
 
   comm_free(&c);
@@ -55,8 +55,8 @@ void SchwarzSolverImpl_t<val_t>::SetupLocalSolver(const slong       *vtx,
 }
 
 template <typename val_t>
-void SchwarzSolverImpl_t<val_t>::CoarseAverage(void *vector) {
-  gs(vector, dom, gs_add, 0, gsh, &bfr);
+void SchwarzSolverImpl_t<val_t>::CoarseAverage(vec_t &vec) {
+  gs(vec.data(), dom, gs_add, 0, gsh, &bfr);
   for (uint i = 0; i < shared_size; i++) rhs[i] *= inv_mul[i];
 }
 
@@ -92,7 +92,7 @@ template <typename val_t>
 void SchwarzSolverImpl_t<val_t>::Solve(occa::memory       &o_x,
                                        const occa::memory &o_rhs) {
   const size_t size = user_size * sizeof(val_t);
-  o_rhs.copyTo(rhs, size, 0);
+  o_rhs.copyTo(rhs.data(), size, 0);
 
   CoarseAverage(rhs);
 
@@ -119,7 +119,7 @@ void SchwarzSolverImpl_t<val_t>::Solve(occa::memory       &o_x,
 
   CoarseAverage(x);
 
-  o_x.copyFrom(x, size, 0);
+  o_x.copyFrom(x.data(), size, 0);
 }
 
 template <typename val_t>
@@ -130,9 +130,9 @@ SchwarzSolverImpl_t<val_t>::SchwarzSolverImpl_t(const size_t user_size_,
   shared_size = shared_size_;
   crs_size    = crs_size_;
 
-  x       = new val_t[shared_size];
-  rhs     = new val_t[shared_size];
-  inv_mul = new val_t[shared_size];
+  x.reserve(shared_size);
+  rhs.reserve(shared_size);
+  inv_mul.reserve(shared_size);
 
   if (sizeof(val_t) == sizeof(double)) dom = gs_double;
   if (sizeof(val_t) == sizeof(float)) dom = gs_float;
@@ -143,7 +143,6 @@ SchwarzSolverImpl_t<val_t>::SchwarzSolverImpl_t(const size_t user_size_,
 }
 
 template <typename val_t> SchwarzSolverImpl_t<val_t>::~SchwarzSolverImpl_t() {
-  delete[] A, x, rhs, inv_mul;
   buffer_free(&bfr);
   if (gsh) gs_free(gsh);
   delete local_solver;

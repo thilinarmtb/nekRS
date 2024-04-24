@@ -7,6 +7,8 @@
 
 template <typename val_t>
 class SchwarzSolverImpl_t : public SchwarzSolverInterface_t {
+  using vec_t = std::vector<val_t>;
+
 public:
   SchwarzSolverImpl_t(const size_t user_size, const size_t shared_size,
                       const size_t crs_size);
@@ -28,12 +30,12 @@ private:
 
   void SetupCoarseMatrix(const double *A);
 
-  void CoarseAverage(void *vector);
+  void CoarseAverage(vec_t &vec);
 
 private:
   size_t                user_size, shared_size, crs_size;
   gs_dom                dom;
-  val_t                *A, *x, *rhs, *inv_mul;
+  vec_t                 A, x, rhs, inv_mul;
   buffer                bfr;
   struct gs_data       *gsh;
   LocalSolver_t<val_t> *local_solver;
