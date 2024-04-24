@@ -879,19 +879,19 @@ int setup(nrs_t *nrs_in)
   nekData.wy = (double *)ptr("wy");
   nekData.wz = (double *)ptr("wz");
 
-  /* box solver */
+  /* Schwarz solver */
+  nekData.schwz_ne = *((int*) ptr("schwz_ne"));
+  nekData.schwz_nw = *((int*) ptr("schwz_nw"));
+  nekData.schwz_ncr = *((int*) ptr("schwz_ncr"));
+
   nekData.box_e = (double*) ptr("box_e");
   nekData.box_r = (double*) ptr("box_r");
   nekData.box_mask = (double*) ptr("box_mask");
+
+  nekData.schwz_frontier = (int*) ptr("schwz_frontier");
   nekData.schwz_mask = (double*) ptr("schwz_mask");
   nekData.schwz_amat = (double*) ptr("schwz_amat");
   nekData.schwz_xyz = (double*) ptr("schwz_xyz");
-
-  nekData.schwz_ne = (int*) ptr("schwz_ne");
-  nekData.schwz_nw = (int*) ptr("schwz_nw");
-  nekData.schwz_ncr = (int*) ptr("schwz_ncr");
-  nekData.schwz_frontier = (int*) ptr("schwz_frontier");
-
   nekData.schwz_vtx = (long long*) ptr("schwz_vtx");
   nekData.schwz_eids = (long long*) ptr("schwz_eids");
 

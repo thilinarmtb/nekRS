@@ -14,7 +14,7 @@
       integer         getu, getp, gett, getps, llelt, lldimt
 
 C----------------------------------------------------------------------
-C     box solver
+C     Schwarz solver
 C----------------------------------------------------------------------
       integer lelmrs,lvrs
       parameter(lelmrs=3*lelt+200, lvrs=2**ldim)

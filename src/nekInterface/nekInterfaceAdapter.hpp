@@ -81,9 +81,11 @@ struct nekdata_private {
   /* mesh velocities */
   double *wx, *wy, *wz;
 
-  /* box solver */
-  double *box_e, *box_r, *box_mask, *schwz_mask, *schwz_amat, *schwz_xyz;
-  int *schwz_ne, *schwz_nw, *schwz_ncr, *schwz_frontier;
+  /* Schwarz solver */
+  int schwz_ne, schwz_nw, schwz_ncr;
+  double *box_e, *box_r, *box_mask;
+  int *schwz_frontier;
+  double *schwz_mask, *schwz_amat, *schwz_xyz;
   long long *schwz_vtx, *schwz_eids;
 };
 

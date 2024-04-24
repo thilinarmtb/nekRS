@@ -6,8 +6,6 @@
 
 #include "occa.hpp"
 
-template <typename> class SchwarzSolverImpl_t;
-
 class SchwarzSolverInterface_t {
 public:
   virtual void Setup(const long long *vtx, const double *xyz,
@@ -21,13 +19,10 @@ public:
   virtual ~SchwarzSolverInterface_t() = default;
 };
 
-class SchwarzSolver_t {
+template <typename val_t> class SchwarzSolver_t {
 public:
-  SchwarzSolver_t(const unsigned num_dofs, const unsigned long long *vertices,
-                  const unsigned nnz, const unsigned *Ai, const unsigned *Aj,
-                  const double *A, const unsigned null_space, const int usefp32,
-                  const int device_id, const MPI_Comm comm,
-                  const std::string &backend);
+  SchwarzSolver_t();
+
   void Solve(occa::memory &o_x, const occa::memory &o_rhs);
 
   ~SchwarzSolver_t();
@@ -35,5 +30,8 @@ public:
 private:
   SchwarzSolverInterface_t *solver;
 };
+
+template class SchwarzSolver_t<float>;
+template class SchwarzSolver_t<double>;
 
 #endif
