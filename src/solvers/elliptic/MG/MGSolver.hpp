@@ -38,6 +38,7 @@ SOFTWARE.
 #include "hypreWrapper.hpp"
 #include "hypreWrapperDevice.hpp"
 #include "AMGX.hpp"
+#include "schwarzSolver.hpp"
 
 class MGSolver_t {
 
@@ -100,6 +101,7 @@ public:
  
     void *boomerAMG = nullptr;
     AMGX_t *AMGX = nullptr;
+    SchwarzSolver_t<pfloat> *SchwarzSolver = nullptr;
   
   };
 
