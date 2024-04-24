@@ -13,9 +13,9 @@ template <typename val_t> SchwarzSolver_t<val_t>::SchwarzSolver_t() {
 
   solver = new SchwarzSolverImpl_t<val_t>(un, sn, ncr);
 
-  MPI_Comm    comm;
-  std::string backend;
-  int         device_id;
+  MPI_Comm    comm      = platform->comm.mpiComm;
+  std::string backend   = platform->device.mode();
+  int         device_id = platform->device.id();
 
   solver->Setup(
       (const long long *)nekData.schwz_vtx, (const double *)nekData.schwz_xyz,
