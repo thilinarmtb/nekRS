@@ -7,16 +7,16 @@
 
 template <typename val_t>
 class AlgorithmGemv_t : public AlgorithmInterface_t<val_t> {
-  using vec_t = std::vector<val_t>;
+  using Vec_t = std::vector<val_t>;
 
 public:
   AlgorithmGemv_t();
 
-  void Setup(const uint num_rows, uint *row_offsets, uint *col_indices,
-             double *values, const std::string &backend,
-             const int device_id) override;
+  void Setup(const unsigned num_rows, const Idx_t &row_offsets,
+             const Idx_t &col_indices, const Double_t &values,
+             const std::string &backend, const int device_id) override;
 
-  void Solve(vec_t &x, const vec_t &rhs) override;
+  void Solve(Vec_t &x, const Vec_t &rhs) override;
 
   ~AlgorithmGemv_t();
 
@@ -31,13 +31,13 @@ template <typename val_t> AlgorithmGemv_t<val_t>::AlgorithmGemv_t() {
 }
 
 template <typename val_t>
-void AlgorithmGemv_t<val_t>::Setup(const uint num_rows, uint *row_offsets,
-                                   uint *col_indices, double *values,
-                                   const std::string &backend,
-                                   const int          device_id) {
+void AlgorithmGemv_t<val_t>::Setup(
+    const unsigned num_rows, const Idx_t &row_offsets, const Idx_t &col_indices,
+    const Double_t &values, const std::string &backend, const int device_id) {
+
   size = sizeof(val_t) * num_rows;
 
-  double *A = new double[num_rows * num_rows];
+  Double_t A(num_rows * num_rows);
   for (uint i = 0; i < num_rows; i++) A[i] = 0;
 
   for (uint i = 0; i < num_rows; i++) {
@@ -45,27 +45,26 @@ void AlgorithmGemv_t<val_t>::Setup(const uint num_rows, uint *row_offsets,
       A[i * num_rows + col_indices[j]] = values[j];
   }
 
-  lapack_int *pivots = new lapack_int[num_rows];
-  lapack_int  info =
-      LAPACKE_dgetrf(LAPACK_ROW_MAJOR, num_rows, num_rows, A, num_rows, pivots);
+  std::vector<lapack_int> pivots(num_rows);
+  lapack_int info = LAPACKE_dgetrf(LAPACK_ROW_MAJOR, num_rows, num_rows,
+                                   A.data(), num_rows, pivots.data());
   assert(info == 0);
 
-  info = LAPACKE_dgetri(LAPACK_ROW_MAJOR, num_rows, A, num_rows, pivots);
+  info = LAPACKE_dgetri(LAPACK_ROW_MAJOR, num_rows, A.data(), num_rows,
+                        pivots.data());
   assert(info == 0);
 
   gemv = gemv_init(NULL, NULL);
   gemv_set_device(gemv, device_id);
   gemv_set_backend(gemv, backend.c_str());
-  gemv_set_matrix(gemv, num_rows, num_rows, A);
+  gemv_set_matrix(gemv, num_rows, num_rows, A.data());
 
   gemv_device_malloc(&d_r, size);
   gemv_device_malloc(&d_x, size);
-
-  delete[] A, pivots;
 }
 
 template <typename val_t>
-void AlgorithmGemv_t<val_t>::Solve(vec_t &x, const vec_t &rhs) {
+void AlgorithmGemv_t<val_t>::Solve(Vec_t &x, const Vec_t &rhs) {
   gemv_copy(d_r, rhs.data(), size, GEMV_H2D);
   gemv_run(d_x, d_r, gemv);
   gemv_copy(x.data(), d_x, size, GEMV_H2D);

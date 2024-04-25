@@ -4,16 +4,28 @@
 #include "localSolver.hpp"
 #include "schwarzSolver.hpp"
 
+class SchwarzSolverInterface_t {
+public:
+  virtual void Setup(const Long_t &vtx, const Double_t &amat,
+                     const Double_t &mask, const Int_t &frontier,
+                     const size_t num_elements, const MPI_Comm comm,
+                     const std::string &backend, const int device_id) = 0;
+
+  virtual void Solve(occa::memory &o_x, const occa::memory &o_rhs) = 0;
+
+  virtual ~SchwarzSolverInterface_t() = default;
+};
+
 template <typename val_t>
 class SchwarzSolverImpl_t : public SchwarzSolverInterface_t {
-  using vec_t = std::vector<val_t>;
+  using Vec_t = std::vector<val_t>;
 
 public:
   SchwarzSolverImpl_t(const size_t user_size, const size_t shared_size,
                       const size_t crs_size);
 
-  void Setup(const long long *vtx, const double *xyz, const double *amat,
-             const double *mask, const int *frontier, const int num_elements,
+  void Setup(const Long_t &vtx, const Double_t &amat, const Double_t &mask,
+             const Int_t &frontier, const size_t num_elements,
              const MPI_Comm comm, const std::string &backend,
              const int device_id) override;
 
@@ -22,19 +34,17 @@ public:
   ~SchwarzSolverImpl_t();
 
 private:
-  void SetupLocalSolver(const hlong *vtx, const double *va,
+  void SetupLocalSolver(const Long_t &vtx, const Double_t &va,
                         const std::string &backend, const int device_id);
 
-  void SetupCoarseAverage(const hlong *vtx, const MPI_Comm comm);
+  void SetupCoarseAverage(const Long_t &vtx, const MPI_Comm comm);
 
-  void SetupCoarseMatrix(const double *A);
-
-  void CoarseAverage(vec_t &vec);
+  void CoarseAverage(Vec_t &vec);
 
 private:
   size_t                user_size, shared_size, crs_size;
   gs_dom                dom;
-  vec_t                 A, x, rhs, inv_mul;
+  Vec_t                 A, x, rhs, inv_mul;
   buffer                bfr;
   struct gs_data       *gsh;
   LocalSolver_t<val_t> *local_solver;
