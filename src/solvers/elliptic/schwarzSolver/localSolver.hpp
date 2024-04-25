@@ -3,8 +3,6 @@
 
 #include "nrssys.hpp"
 
-#include <vector>
-
 #include "gslib.h"
 
 using Idx_t    = std::vector<size_t>;

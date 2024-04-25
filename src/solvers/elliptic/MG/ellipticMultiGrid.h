@@ -29,6 +29,7 @@
 
 #include "elliptic.h"
 #include "MG/MGSolver.hpp"
+
 #include <vector>
 
 enum class SmootherType
@@ -76,10 +77,7 @@ public:
   int DownLegChebyshevDegree;
   int UpLegChebyshevDegree;
 
-  inline static pfloat* smootherResidual;
-  inline static occa::memory o_smootherResidual;
-  inline static occa::memory o_smootherResidual2;
-  inline static occa::memory o_smootherUpdate;
+  static pfloat* smootherResidual;
   occa::kernel preFDMKernel;
   occa::kernel fusedFDMKernel;
   occa::kernel postFDMKernel;
@@ -165,5 +163,9 @@ public:
 
   void buildCoarsenerQuadHex(mesh_t **meshLevels, int Nf, int Nc);
 };
+
+extern occa::memory o_smootherResidual;
+extern occa::memory o_smootherResidual2;
+extern occa::memory o_smootherUpdate;
 
 #endif

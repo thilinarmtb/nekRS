@@ -30,6 +30,7 @@ SOFTWARE.
 #include "timer.hpp"
 
 #include "AMGX.hpp"
+#include "schwarzSolver.hpp"
 
 #include "platform.hpp"
 #include "linAlg.hpp"

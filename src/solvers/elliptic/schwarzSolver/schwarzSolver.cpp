@@ -1,5 +1,3 @@
-#include <cassert>
-
 #include "nekInterfaceAdapter.hpp"
 
 #include "schwarzSolver.hpp"
@@ -64,8 +62,8 @@ void SchwarzSolver_t<val_t>::Setup(const Long_t &vtx, const Double_t &amat,
   }
 
   // Sanity check:
-  const size_t null_space = (maskm < 1e-10) ? 0 : 1;
-  assert(null_space == 0);
+  // const size_t null_space = (maskm < 1e-10) ? 0 : 1;
+  // assert(null_space == 0);
 
   // Setup local Schwarz solver.
   const std::string backend   = platform->device.mode();

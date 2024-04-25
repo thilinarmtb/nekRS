@@ -1,7 +1,8 @@
-#if !defined(nekrs_ioutils_hpp_)
-#define nekrs_ioutils_hpp_
+#if !defined(nekrs_fileutils_hpp_)
+#define nekrs_fileutils_hpp_
 
 #include "nrs.hpp"
+
 #include <filesystem>
 namespace fs = std::filesystem;
 

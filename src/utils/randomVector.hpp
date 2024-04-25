@@ -2,12 +2,12 @@
 #define RANDOMVECTOR_HPP
 
 #include <mpi.h>
-#include <random>
+#include <platform.hpp>
+
 #include <vector>
 #include <algorithm>
 #include <iostream>
-#include <vector>
-#include <platform.hpp>
+#include <random>
 
 template <typename T> std::vector<T> randomVector(int N, T min = 0, T max = 1, bool deterministic = false)
 {

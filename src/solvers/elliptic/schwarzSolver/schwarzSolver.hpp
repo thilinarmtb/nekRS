@@ -1,8 +1,6 @@
 #if !defined(__SCHWARZ_SOLVER_HPP__)
 #define __SCHWARZ_SOLVER_HPP__
 
-#include "nrssys.hpp"
-
 #include "localSolver.hpp"
 
 template <typename val_t> class SchwarzSolver_t {
