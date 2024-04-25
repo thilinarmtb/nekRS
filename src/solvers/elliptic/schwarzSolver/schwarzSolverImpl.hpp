@@ -1,8 +1,7 @@
-#if !defined(__SCHWARZ_SOLVE_IMPL_HPP__)
-#define __SCHWARZ_SOLVE_IMPL_HPP__
+#if !defined(__SCHWARZ_SOLVER_IMPL_HPP__)
+#define __SCHWARZ_SOLVER_IMPL_HPP__
 
 #include "localSolver.hpp"
-
 #include "schwarzSolver.hpp"
 
 template <typename val_t>
@@ -23,10 +22,10 @@ public:
   ~SchwarzSolverImpl_t();
 
 private:
-  void SetupLocalSolver(const slong *vtx, const double *va,
+  void SetupLocalSolver(const hlong *vtx, const double *va,
                         const std::string &backend, const int device_id);
 
-  void SetupCoarseAverage(const slong *vtx, const MPI_Comm comm);
+  void SetupCoarseAverage(const hlong *vtx, const MPI_Comm comm);
 
   void SetupCoarseMatrix(const double *A);
 
@@ -44,4 +43,4 @@ private:
 template class SchwarzSolverImpl_t<float>;
 template class SchwarzSolverImpl_t<double>;
 
-#endif // __SCHWARZ_SOLVE_IMPL_HPP__
+#endif // __SCHWARZ_SOLVER_IMPL_HPP__
