@@ -1,3 +1,5 @@
+#include <cassert>
+
 #include "nekInterfaceAdapter.hpp"
 
 #include "schwarzSolver.hpp"
@@ -23,14 +25,15 @@ void SchwarzSolver_t<val_t>::SetupCoarseAverage(const Long_t  &vtx,
 template <typename val_t>
 void SchwarzSolver_t<val_t>::SetupLocalSolver(const Long_t      &vtx,
                                               const Double_t    &va,
+                                              const Algorithm_t &algo,
                                               const std::string &backend,
                                               const int          device_id) {
   // FIXME: The following should be part of the input.
   const size_t nnz = shared_size * crs_size;
   Idx_t        ia(nnz);
   Idx_t        ja(nnz);
-  const size_t ne = shared_size / crs_size;
-  for (size_t e = 0; e < ne; e++) {
+  const size_t num_elements = shared_size / crs_size;
+  for (size_t e = 0; e < num_elements; e++) {
     for (size_t j = 0; j < crs_size; j++) {
       for (size_t i = 0; i < crs_size; i++) {
         ia[e * crs_size * crs_size + j * crs_size + i] = e * crs_size + i;
@@ -38,9 +41,9 @@ void SchwarzSolver_t<val_t>::SetupLocalSolver(const Long_t      &vtx,
       }
     }
   }
+
   solver = new LocalSolver_t<val_t>{};
-  solver->Setup(shared_size, vtx, nnz, ia, ja, va, Algorithm_t::Gemv, backend,
-                device_id);
+  solver->Setup(vtx, ia, ja, va, algo, backend, device_id);
 }
 
 template <typename val_t>
@@ -51,8 +54,8 @@ void SchwarzSolver_t<val_t>::CoarseAverage(Vec_t &vec) {
 
 template <typename val_t>
 void SchwarzSolver_t<val_t>::Setup(const Long_t &vtx, const Double_t &amat,
-                                   const Double_t &mask,
-                                   const Int_t    &frontier) {
+                                   const Double_t &mask, const Int_t &frontier,
+                                   const Algorithm_t &algo) {
   Long_t vtx_ll(shared_size);
   double maskm = std::numeric_limits<double>::max();
   for (size_t i = 0; i < shared_size; i++) {
@@ -62,16 +65,16 @@ void SchwarzSolver_t<val_t>::Setup(const Long_t &vtx, const Double_t &amat,
   }
 
   // Sanity check:
-  // const size_t null_space = (maskm < 1e-10) ? 0 : 1;
-  // assert(null_space == 0);
+  const size_t null_space = (maskm < 1e-10) ? 0 : 1;
+  assert(null_space == 0);
 
   // Setup local Schwarz solver.
-  const std::string backend   = platform->device.mode();
-  const int         device_id = platform->device.id();
-  SetupLocalSolver(vtx_ll, amat, backend, device_id);
+  const auto backend   = platform->device.mode();
+  const auto device_id = platform->device.id();
+  SetupLocalSolver(vtx_ll, amat, algo, backend, device_id);
 
   // Setup the gather-scatter handle for coarse average.
-  const MPI_Comm comm = platform->comm.mpiComm;
+  const auto comm = platform->comm.mpiComm;
   SetupCoarseAverage(vtx_ll, comm);
 
   // Setup the A matrix:
@@ -117,18 +120,12 @@ void SchwarzSolver_t<val_t>::Solve(occa::memory       &o_x,
 template <typename val_t> SchwarzSolver_t<val_t>::SchwarzSolver_t() {
   nek::box_crs_setup();
 
-  {
-    this->crs_size    = nekData.schwz_ncr;
-    this->user_size   = nekData.nelv * crs_size;
-    this->shared_size = nekData.schwz_ne * crs_size;
-  }
+  crs_size    = nekData.schwz_ncr;
+  user_size   = nekData.nelv * crs_size;
+  shared_size = nekData.schwz_ne * crs_size;
 
   const hlong *p_vtx = (const hlong *)nekData.schwz_vtx;
   Long_t       vtx(p_vtx, p_vtx + shared_size);
-
-  const double *p_amat = (const double *)nekData.schwz_amat;
-  const size_t  nnz    = shared_size * crs_size;
-  Double_t      amat(p_amat, p_amat + nnz);
 
   const double *p_mask = (const double *)nekData.schwz_mask;
   Double_t      mask(p_mask, p_mask + shared_size);
@@ -136,7 +133,11 @@ template <typename val_t> SchwarzSolver_t<val_t>::SchwarzSolver_t() {
   const int *p_frontier = (const int *)nekData.schwz_frontier;
   Int_t      frontier(p_frontier, p_frontier + shared_size);
 
-  Setup(vtx, amat, mask, frontier);
+  const double *p_amat = (const double *)nekData.schwz_amat;
+  const size_t  nnz    = shared_size * crs_size;
+  Double_t      amat(p_amat, p_amat + nnz);
+
+  Setup(vtx, amat, mask, frontier, Algorithm_t::Gemv);
 
   if (sizeof(val_t) == sizeof(double)) dom = gs_double;
   if (sizeof(val_t) == sizeof(float)) dom = gs_float;

@@ -10,14 +10,13 @@ using Int_t    = std::vector<int>;
 using Double_t = std::vector<double>;
 using Long_t   = std::vector<hlong>;
 
-enum class Algorithm_t { Gemv, Xxt, Cholmod };
+enum class Algorithm_t : std::int8_t { Gemv = 0, Xxt, Cholmod };
 
 template <typename val_t> class AlgorithmInterface_t {
   using Vec_t = std::vector<val_t>;
 
 public:
-  virtual void Setup(const unsigned num_rows, const Idx_t &row_offsets,
-                     const Idx_t               &col_indices,
+  virtual void Setup(const Idx_t &row_offsets, const Idx_t &col_indices,
                      const std::vector<double> &values,
                      const std::string &backend, const int device_id) = 0;
 
@@ -32,10 +31,9 @@ template <typename val_t> class LocalSolver_t {
 public:
   LocalSolver_t();
 
-  void Setup(const unsigned input_size, const Long_t &vtx, const unsigned nnz,
-             const Idx_t &ia, const Idx_t &ja, const Double_t &va,
-             const Algorithm_t algorithm, const std::string &backend,
-             const int device_id);
+  void Setup(const Long_t &vtx, const Idx_t &ia, const Idx_t &ja,
+             const Double_t &va, const Algorithm_t algorithm,
+             const std::string &backend, const int device_id);
 
   void Solve(Vec_t &x, const Vec_t &rhs);
 
@@ -44,10 +42,10 @@ public:
 private:
   void SetupUserToCompressMap(const Long_t &vtx, buffer *bfr);
 
-  void SetupSolver(const Long_t &vtx, const unsigned nnz, const Idx_t &ia,
-                   const Idx_t &ja, const Double_t &va,
-                   const Algorithm_t algorithm, const std::string &backend,
-                   const int device_id, buffer *bfr);
+  void SetupSolver(const Long_t &vtx, const Idx_t &ia, const Idx_t &ja,
+                   const Double_t &va, const Algorithm_t algorithm,
+                   const std::string &backend, const int device_id,
+                   buffer *bfr);
 
 private:
   unsigned                     input_size, compressed_size;

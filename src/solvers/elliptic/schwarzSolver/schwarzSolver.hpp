@@ -10,7 +10,7 @@ public:
   SchwarzSolver_t();
 
   void Setup(const Long_t &vtx, const Double_t &amat, const Double_t &mask,
-             const Int_t &frontier);
+             const Int_t &frontier, const Algorithm_t &algo);
 
   void Solve(occa::memory &o_x, const occa::memory &o_rhs);
 
@@ -20,12 +20,13 @@ private:
   void SetupCoarseAverage(const Long_t &vtx, const MPI_Comm comm);
 
   void SetupLocalSolver(const Long_t &vtx, const Double_t &va,
-                        const std::string &backend, const int device_id);
+                        const Algorithm_t &algo, const std::string &backend,
+                        const int device_id);
 
   void CoarseAverage(Vec_t &vec);
 
 private:
-  size_t                user_size, shared_size, crs_size;
+  size_t                crs_size, user_size, shared_size;
   gs_dom                dom;
   Vec_t                 A, x, rhs, inv_mul;
   buffer                bfr;

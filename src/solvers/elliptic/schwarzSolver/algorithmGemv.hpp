@@ -12,9 +12,9 @@ class AlgorithmGemv_t : public AlgorithmInterface_t<val_t> {
 public:
   AlgorithmGemv_t();
 
-  void Setup(const unsigned num_rows, const Idx_t &row_offsets,
-             const Idx_t &col_indices, const Double_t &values,
-             const std::string &backend, const int device_id) override;
+  void Setup(const Idx_t &row_offsets, const Idx_t &col_indices,
+             const Double_t &values, const std::string &backend,
+             const int device_id) override;
 
   void Solve(Vec_t &x, const Vec_t &rhs) override;
 
@@ -31,11 +31,14 @@ template <typename val_t> AlgorithmGemv_t<val_t>::AlgorithmGemv_t() {
 }
 
 template <typename val_t>
-void AlgorithmGemv_t<val_t>::Setup(
-    const unsigned num_rows, const Idx_t &row_offsets, const Idx_t &col_indices,
-    const Double_t &values, const std::string &backend, const int device_id) {
+void AlgorithmGemv_t<val_t>::Setup(const Idx_t       &row_offsets,
+                                   const Idx_t       &col_indices,
+                                   const Double_t    &values,
+                                   const std::string &backend,
+                                   const int          device_id) {
 
-  size = sizeof(val_t) * num_rows;
+  const size_t num_rows = row_offsets.size() - 1;
+  size                  = sizeof(val_t) * num_rows;
 
   Double_t A(num_rows * num_rows);
   for (uint i = 0; i < num_rows; i++) A[i] = 0;
