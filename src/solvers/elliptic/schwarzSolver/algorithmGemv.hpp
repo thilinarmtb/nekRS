@@ -70,7 +70,7 @@ template <typename val_t>
 void AlgorithmGemv_t<val_t>::Solve(Vec_t &x, const Vec_t &rhs) {
   gemv_copy(d_r, rhs.data(), size, GEMV_H2D);
   gemv_run(d_x, d_r, gemv);
-  gemv_copy(x.data(), d_x, size, GEMV_H2D);
+  gemv_copy(x.data(), d_x, size, GEMV_D2H);
 }
 
 template <typename val_t> AlgorithmGemv_t<val_t>::~AlgorithmGemv_t() {
