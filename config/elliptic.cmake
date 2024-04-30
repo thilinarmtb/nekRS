@@ -31,5 +31,5 @@ set(ELLIPTIC_SOURCES
         ${ELLIPTIC_SOURCE_DIR}/MG/coarseLevel.cpp
         ${ELLIPTIC_SOURCE_DIR}/MG/level.cpp
         ${ELLIPTIC_SOURCE_DIR}/MG/MGSolver.cpp
-        ${ELLIPTIC_SOURCE_DIR}/schwarzSolver/schwarzSolver.cpp
-        ${ELLIPTIC_SOURCE_DIR}/schwarzSolver/localSolver.cpp)
+        ${ELLIPTIC_SOURCE_DIR}/MG/gmgSolver/gmgSolver.cpp
+        ${ELLIPTIC_SOURCE_DIR}/MG/gmgSolver/localSolver.cpp)

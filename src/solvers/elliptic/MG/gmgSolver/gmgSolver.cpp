@@ -2,11 +2,11 @@
 
 #include "nekInterfaceAdapter.hpp"
 
-#include "schwarzSolver.hpp"
+#include "gmgSolver.hpp"
 
 template <typename val_t>
-void SchwarzSolver_t<val_t>::SetupCoarseAverage(const Long_t  &vtx,
-                                                const MPI_Comm comm) {
+void GMGSolver_t<val_t>::SetupCoarseAverage(const Long_t  &vtx,
+                                            const MPI_Comm comm) {
   struct comm c;
   comm_init(&c, comm);
 
@@ -23,11 +23,10 @@ void SchwarzSolver_t<val_t>::SetupCoarseAverage(const Long_t  &vtx,
 }
 
 template <typename val_t>
-void SchwarzSolver_t<val_t>::SetupLocalSolver(const Long_t      &vtx,
-                                              const Double_t    &va,
-                                              const Algorithm_t &algo,
-                                              const std::string &backend,
-                                              const int          device_id) {
+void GMGSolver_t<val_t>::SetupLocalSolver(const Long_t &vtx, const Double_t &va,
+                                          const Algorithm_t &algo,
+                                          const std::string &backend,
+                                          const int          device_id) {
   // FIXME: The following should be part of the input.
   const size_t nnz = shared_size * crs_size;
   Idx_t        ia(nnz);
@@ -46,16 +45,15 @@ void SchwarzSolver_t<val_t>::SetupLocalSolver(const Long_t      &vtx,
   solver->Setup(vtx, ia, ja, va, algo, backend, device_id);
 }
 
-template <typename val_t>
-void SchwarzSolver_t<val_t>::CoarseAverage(Vec_t &vec) {
+template <typename val_t> void GMGSolver_t<val_t>::CoarseAverage(Vec_t &vec) {
   gs(vec.data(), dom, gs_add, 0, gsh, &bfr);
   for (size_t i = 0; i < shared_size; i++) rhs[i] *= inv_mul[i];
 }
 
 template <typename val_t>
-void SchwarzSolver_t<val_t>::Setup(const Long_t &vtx, const Double_t &amat,
-                                   const Double_t &mask, const Int_t &frontier,
-                                   const Algorithm_t &algo) {
+void GMGSolver_t<val_t>::Setup(const Long_t &vtx, const Double_t &amat,
+                               const Double_t &mask, const Int_t &frontier,
+                               const Algorithm_t &algo) {
   Long_t vtx_ll(shared_size);
   double maskm = std::numeric_limits<double>::max();
   for (size_t i = 0; i < shared_size; i++) {
@@ -84,8 +82,7 @@ void SchwarzSolver_t<val_t>::Setup(const Long_t &vtx, const Double_t &amat,
 }
 
 template <typename val_t>
-void SchwarzSolver_t<val_t>::Solve(occa::memory       &o_x,
-                                   const occa::memory &o_rhs) {
+void GMGSolver_t<val_t>::Solve(occa::memory &o_x, const occa::memory &o_rhs) {
   const size_t size = user_size * sizeof(val_t);
   o_rhs.copyTo(rhs.data(), size, 0);
 
@@ -117,7 +114,7 @@ void SchwarzSolver_t<val_t>::Solve(occa::memory       &o_x,
   o_x.copyFrom(x.data(), size, 0);
 }
 
-template <typename val_t> SchwarzSolver_t<val_t>::SchwarzSolver_t() {
+template <typename val_t> GMGSolver_t<val_t>::GMGSolver_t() {
   nek::box_crs_setup();
 
   crs_size    = nekData.schwz_ncr;
@@ -151,7 +148,7 @@ template <typename val_t> SchwarzSolver_t<val_t>::SchwarzSolver_t() {
   solver = nullptr;
 }
 
-template <typename val_t> SchwarzSolver_t<val_t>::~SchwarzSolver_t() {
+template <typename val_t> GMGSolver_t<val_t>::~GMGSolver_t() {
   buffer_free(&bfr);
   if (gsh) gs_free(gsh);
   if (solver) delete solver;

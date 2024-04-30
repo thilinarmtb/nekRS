@@ -115,7 +115,7 @@ set(NRS_INCLUDE
     ${ELLIPTIC_SOURCE_DIR}/amgSolver/hypre
     ${ELLIPTIC_SOURCE_DIR}/amgSolver/amgx
     ${ELLIPTIC_SOURCE_DIR}/MG
-    ${ELLIPTIC_SOURCE_DIR}/schwarzSolver
+    ${ELLIPTIC_SOURCE_DIR}/MG/gmgSolver
     # FIXME: Ideally, these need not be included manually.
     ${CMAKE_SOURCE_DIR}/3rd_party/lapack/include
     ${CMAKE_SOURCE_DIR}/3rd_party/gemv/include

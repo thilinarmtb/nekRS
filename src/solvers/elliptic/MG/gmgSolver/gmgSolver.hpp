@@ -3,18 +3,18 @@
 
 #include "localSolver.hpp"
 
-template <typename val_t> class SchwarzSolver_t {
+template <typename val_t> class GMGSolver_t {
   using Vec_t = std::vector<val_t>;
 
 public:
-  SchwarzSolver_t();
+  GMGSolver_t();
 
   void Setup(const Long_t &vtx, const Double_t &amat, const Double_t &mask,
              const Int_t &frontier, const Algorithm_t &algo);
 
   void Solve(occa::memory &o_x, const occa::memory &o_rhs);
 
-  ~SchwarzSolver_t();
+  ~GMGSolver_t();
 
 private:
   void SetupCoarseAverage(const Long_t &vtx, const MPI_Comm comm);
@@ -34,7 +34,7 @@ private:
   LocalSolver_t<val_t> *solver;
 };
 
-template class SchwarzSolver_t<float>;
-template class SchwarzSolver_t<double>;
+template class GMGSolver_t<float>;
+template class GMGSolver_t<double>;
 
 #endif // __SCHWARZ_SOLVER_HPP__

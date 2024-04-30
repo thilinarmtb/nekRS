@@ -30,7 +30,7 @@ SOFTWARE.
 #include "timer.hpp"
 
 #include "AMGX.hpp"
-#include "schwarzSolver.hpp"
+#include "gmgSolver.hpp"
 
 #include "platform.hpp"
 #include "linAlg.hpp"
@@ -156,7 +156,7 @@ void MGSolver_t::coarseLevel_t::setupSolver(
       std::stoi(getenv("NEKRS_GPU_MPI")),
       cfg);
   } else if (options.compareArgs("COARSE SOLVER", "SCHWARZSOLVER")) {
-    SchwarzSolver = new SchwarzSolver_t<pfloat>();
+    GMGSolver = new GMGSolver_t<pfloat>();
   } else {
     std::string amgSolver;
     options.getArgs("COARSE SOLVER", amgSolver);
@@ -178,7 +178,7 @@ MGSolver_t::coarseLevel_t::~coarseLevel_t()
       delete (hypreWrapper::boomerAMG_t*) this->boomerAMG;
   }
   if(AMGX) delete AMGX;
-  if(SchwarzSolver) delete SchwarzSolver;
+  if(GMGSolver) delete GMGSolver;
 
   h_xBuffer.free();
   o_xBuffer.free();
@@ -216,7 +216,7 @@ void MGSolver_t::coarseLevel_t::solve(occa::memory& o_rhs, occa::memory& o_x)
     } else if (options.compareArgs("COARSE SOLVER", "AMGX")){
         AMGX->solve(o_Gx.ptr(), o_xBuffer.ptr());
     } else if (options.compareArgs("COARSE SOLVER", "SCHWARZSOLVER")){
-        SchwarzSolver->Solve(o_Gx, o_xBuffer);
+        GMGSolver->Solve(o_Gx, o_xBuffer);
     }
 
     // T->E
