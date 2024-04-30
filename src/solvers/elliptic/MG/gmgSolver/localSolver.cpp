@@ -24,7 +24,7 @@ void LocalSolver_t<val_t>::SetupSolver(const Long_t &vtx, const Idx_t &ia,
 
     entry_t eij;
     for (unsigned z = 0; z < nnz; z++) {
-      sint i = u_to_c[ia[z]], j = u_to_c[ja[z]];
+      int i = u_to_c[ia[z]], j = u_to_c[ja[z]];
       if (i < 0 || j < 0) continue;
       eij.r = i, eij.c = j, eij.v = va[z];
       array_cat(entry_t, &entries, &eij, 1);
@@ -95,7 +95,7 @@ void LocalSolver_t<val_t>::SetupUserToCompressMap(const Long_t &vtx,
   typedef struct {
     ulong id;
     uint  idx;
-    sint  perm;
+    int   perm;
   } vertex_id_t;
 
   struct array vids;
@@ -117,7 +117,7 @@ void LocalSolver_t<val_t>::SetupUserToCompressMap(const Long_t &vtx,
     ulong        id = 0;
     for (unsigned i = 0; i < vids.n; i++) {
       if (pv[i].id != id) id = pv[i].id, compressed_size++;
-      pv[i].perm = (sint)compressed_size - 1;
+      pv[i].perm = (int)compressed_size - 1;
     }
   }
 
