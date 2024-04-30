@@ -323,19 +323,15 @@ include(config/nrs.cmake)
 # blas + lapack
 add_subdirectory(3rd_party/lapack)
 
-# XXT
-add_subdirectory(3rd_party/xxt)
-
 # gemv
 add_subdirectory(3rd_party/gemv)
 
 # Link dependencies
 target_link_libraries(nekrs-lib PUBLIC libocca PRIVATE nekrs-hypre
-  nekrs-hypre-device xxt gs gemv blas lapack lapacke ${CMAKE_DL_LIBS})
+  nekrs-hypre-device gs gemv blas lapack lapacke ${CMAKE_DL_LIBS})
 if (NEKRS_BUILD_FLOAT)
-  target_link_libraries(nekrs-lib-fp32 PUBLIC libocca PRIVATE
-    nekrs-hypre nekrs-hypre-device xxt gs gemv blas lapack lapacke
-    ${CMAKE_DL_LIBS})
+  target_link_libraries(nekrs-lib-fp32 PUBLIC libocca PRIVATE nekrs-hypre
+    nekrs-hypre-device gs gemv blas lapack lapacke ${CMAKE_DL_LIBS})
 endif()
 
 if(OpenMP_FOUND)

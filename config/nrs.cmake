@@ -119,7 +119,7 @@ set(NRS_INCLUDE
     # FIXME: Ideally, these need not be included manually.
     ${CMAKE_SOURCE_DIR}/3rd_party/lapack/include
     ${CMAKE_SOURCE_DIR}/3rd_party/gemv/include
-    ${CMAKE_SOURCE_DIR}/3rd_party/xxt/include
+    ${ELLIPTIC_SOURCE_DIR}/linearSolver/xxt
 )
 
 set_property(
