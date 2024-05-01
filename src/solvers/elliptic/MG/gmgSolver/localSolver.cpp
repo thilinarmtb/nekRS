@@ -165,10 +165,8 @@ void LocalSolver_t<val_t>::Solve(Vec_t &x_, const Vec_t &rhs_) {
   if (solver != nullptr) solver->Solve(x, rhs);
 
   for (unsigned i = 0; i < input_size; i++) {
-    if (u_to_c[i] >= 0)
-      x_[i] = x[u_to_c[i]];
-    else
-      x_[i] = 0;
+    if (u_to_c[i] >= 0) x_[i] = x[u_to_c[i]];
+    else x_[i] = 0;
   }
 }
 

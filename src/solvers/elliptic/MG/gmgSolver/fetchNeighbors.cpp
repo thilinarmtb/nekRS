@@ -277,12 +277,9 @@ static int binary_search(ulong eid, const void *const pe_, uint n) {
   uint                      l = 0, u = n - 1;
   while (u - l > 1) {
     uint mid = (u + l) / 2;
-    if (pe[mid].eid == eid)
-      return mid;
-    else if (pe[mid].eid < eid)
-      l = mid;
-    else
-      u = mid;
+    if (pe[mid].eid == eid) return mid;
+    if (pe[mid].eid < eid) l = mid;
+    else u = mid;
   }
 
   if (pe[l].eid == eid) return l;
