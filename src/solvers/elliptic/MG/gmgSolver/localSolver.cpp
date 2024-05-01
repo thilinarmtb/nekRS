@@ -122,11 +122,9 @@ void LocalSolver_t<val_t>::SetupUserToCompressMap(const Long_t &vtx,
   }
 
   // Reserve sizes for internal vectors.
-  {
-    x.reserve(compressed_size);
-    rhs.reserve(compressed_size);
-    u_to_c.reserve(input_size);
-  }
+  x.reserve(compressed_size);
+  rhs.reserve(compressed_size);
+  u_to_c.reserve(input_size);
 
   {
     sarray_sort(vertex_id_t, vids.ptr, vids.n, idx, 0, bfr);
