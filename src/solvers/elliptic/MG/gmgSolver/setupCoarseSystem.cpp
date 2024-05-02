@@ -1,13 +1,8 @@
 #include <cassert>
 
-#include "elliptic.h"
-#include "platform.hpp"
+#include "gmgSetup.hpp"
 
-using Long_t   = std::vector<hlong>;
-using DLong_t  = std::vector<dlong>;
-using UInt_t   = std::vector<unsigned>;
-using Double_t = std::vector<double>;
-using DFloat_t = std::vector<dfloat>;
+#include "platform.hpp"
 
 static void generateCoarseBasis(DFloat_t &b, const DFloat_t &z,
                                 const unsigned Nqf, const unsigned Nqc) {
@@ -107,9 +102,8 @@ static void setupGalerkinCoarseSystem(UInt_t &Ai, UInt_t &Aj, Double_t &Av,
   }
 }
 
-static void setupCoarseSystem(Long_t &gIds, UInt_t &Ai, UInt_t &Aj,
-                              Double_t &Av, elliptic_t *const ecrs,
-                              elliptic_t *const efine) {
+void setupCoarseSystem(Long_t &gIds, UInt_t &Ai, UInt_t &Aj, Double_t &Av,
+                       elliptic_t *const ecrs, elliptic_t *const efine) {
   const mesh_t *const meshc = ecrs->mesh;
   const mesh_t *const meshf = efine->mesh;
 

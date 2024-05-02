@@ -2,6 +2,8 @@
 #include <cstdio>
 #include <cstdlib>
 
+#include "gmgSetup.hpp"
+
 #include "gslib.h"
 
 /* comm_split_() and comm_split() should be removed once gslib is updated */
@@ -287,10 +289,10 @@ static int binary_search(ulong eid, const void *const pe_, uint n) {
   return -1;
 }
 
-void parrsb_fetch_nbrs_v2(unsigned *nei, slong *eids, unsigned nv, slong *vids,
-                          double *xyz, double *mask, double *mat,
-                          sint *frontier, unsigned nw, sint *wids,
-                          MPI_Comm comm, unsigned max_ne) {
+void setupOverlappedSystem(unsigned *nei, long long *eids, unsigned nv,
+                           long long *vids, double *xyz, double *mask,
+                           double *mat, int *frontier, unsigned nw, int *wids,
+                           MPI_Comm comm, unsigned max_ne) {
   const size_t   ne   = *nei;
   const unsigned ndim = (nv == 8) ? 3 : 2;
   // 1. Find neighbor elements of input elements based on vertex connectivity.
