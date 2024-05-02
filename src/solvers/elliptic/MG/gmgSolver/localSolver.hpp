@@ -1,14 +1,9 @@
 #if !defined(__LOCAL_SOLVER_HPP__)
 #define __LOCAL_SOLVER_HPP__
 
-#include "nrssys.hpp"
+#include "gmgTypes.hpp"
 
 #include "gslib.h"
-
-using Idx_t    = std::vector<size_t>;
-using Int_t    = std::vector<int>;
-using Double_t = std::vector<double>;
-using Long_t   = std::vector<hlong>;
 
 enum class Algorithm_t : std::int8_t { Gemv = 0, Xxt, Cholmod };
 

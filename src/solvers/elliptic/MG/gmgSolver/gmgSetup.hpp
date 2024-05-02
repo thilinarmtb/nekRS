@@ -3,13 +3,9 @@
 
 #include <vector>
 
-#include "elliptic.h"
+#include "gmgTypes.hpp"
 
-using Long_t   = std::vector<hlong>;
-using DLong_t  = std::vector<dlong>;
-using UInt_t   = std::vector<unsigned>;
-using Double_t = std::vector<double>;
-using DFloat_t = std::vector<dfloat>;
+#include "elliptic.h"
 
 void setupCoarseSystem(Long_t &gIds, UInt_t &Ai, UInt_t &Aj, Double_t &Av,
                        elliptic_t *const ecrs, elliptic_t *const efine);

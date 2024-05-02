@@ -1,6 +1,8 @@
 #if !defined(__SCHWARZ_SOLVER_HPP__)
 #define __SCHWARZ_SOLVER_HPP__
 
+#include "gmgTypes.hpp"
+
 #include "localSolver.hpp"
 
 template <typename val_t> class GMGSolver_t {
