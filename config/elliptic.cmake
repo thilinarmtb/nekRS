@@ -32,6 +32,7 @@ set(ELLIPTIC_SOURCES
         ${ELLIPTIC_SOURCE_DIR}/MG/coarseLevel.cpp
         ${ELLIPTIC_SOURCE_DIR}/MG/level.cpp
         ${ELLIPTIC_SOURCE_DIR}/MG/MGSolver.cpp
+        ${ELLIPTIC_SOURCE_DIR}/MG/gmgSolver/setupCoarseSystem.cpp
         ${ELLIPTIC_SOURCE_DIR}/MG/gmgSolver/fetchNeighbors.cpp
         ${ELLIPTIC_SOURCE_DIR}/MG/gmgSolver/localSolver.cpp
         ${ELLIPTIC_SOURCE_DIR}/MG/gmgSolver/gmgSolver.cpp)
