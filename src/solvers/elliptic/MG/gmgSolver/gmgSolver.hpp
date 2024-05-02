@@ -11,17 +11,18 @@ template <typename val_t> class GMGSolver_t {
 public:
   GMGSolver_t();
 
-  void Setup(const Long_t &vtx, const Double_t &amat, const Double_t &mask,
-             const Int_t &frontier, const Algorithm_t &algo);
+  void Setup(const VecLong_t &vtx, const VecDouble_t &amat,
+             const VecDouble_t &mask, const VecInt_t &frontier,
+             const Algorithm_t &algo);
 
   void Solve(occa::memory &o_x, const occa::memory &o_rhs);
 
   ~GMGSolver_t();
 
 private:
-  void SetupCoarseAverage(const Long_t &vtx, const MPI_Comm comm);
+  void SetupCoarseAverage(const VecLong_t &vtx, const MPI_Comm comm);
 
-  void SetupLocalSolver(const Long_t &vtx, const Double_t &va,
+  void SetupLocalSolver(const VecLong_t &vtx, const VecDouble_t &va,
                         const Algorithm_t &algo, const std::string &backend,
                         const int device_id);
 

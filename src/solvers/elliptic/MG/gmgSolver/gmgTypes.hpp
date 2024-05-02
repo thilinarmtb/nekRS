@@ -5,15 +5,15 @@
 
 #include "nrssys.hpp"
 
-using Int_t  = std::vector<int>;
-using UInt_t = std::vector<unsigned>;
+using VecInt_t  = std::vector<int>;
+using VecUInt_t = std::vector<unsigned>;
 
-using Idx_t = std::vector<size_t>;
+using VecIdx_t = std::vector<size_t>;
 
-using Long_t  = std::vector<hlong>;
-using DLong_t = std::vector<dlong>;
+using VecLong_t  = std::vector<hlong>;
+using VecDlong_t = std::vector<dlong>;
 
-using Double_t = std::vector<double>;
-using DFloat_t = std::vector<dfloat>;
+using VecDouble_t = std::vector<double>;
+using VecDfloat_t = std::vector<dfloat>;
 
 #endif // __GMG_TYPES_HPP__

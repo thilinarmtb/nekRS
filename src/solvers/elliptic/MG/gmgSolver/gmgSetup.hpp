@@ -7,8 +7,9 @@
 
 #include "elliptic.h"
 
-void setupCoarseSystem(Long_t &gIds, UInt_t &Ai, UInt_t &Aj, Double_t &Av,
-                       elliptic_t *const ecrs, elliptic_t *const efine);
+void setupCoarseSystem(VecLong_t &gIds, VecUInt_t &Ai, VecUInt_t &Aj,
+                       VecDouble_t &Av, elliptic_t *const ecrs,
+                       elliptic_t *const efine);
 
 void setupOverlappedSystem(unsigned *nei, long long *eids, unsigned nv,
                            long long *vids, double *xyz, double *mask,

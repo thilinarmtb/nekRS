@@ -7,8 +7,9 @@
 #include "localSolver.hpp"
 
 template <typename val_t>
-void LocalSolver_t<val_t>::SetupSolver(const Long_t &vtx, const Idx_t &ia,
-                                       const Idx_t &ja, const Double_t &va,
+void LocalSolver_t<val_t>::SetupSolver(const VecLong_t &vtx, const VecIdx_t &ia,
+                                       const VecIdx_t    &ja,
+                                       const VecDouble_t &va,
                                        const Algorithm_t  algorithm,
                                        const std::string &backend,
                                        const int device_id, buffer *bfr) {
@@ -55,9 +56,9 @@ void LocalSolver_t<val_t>::SetupSolver(const Long_t &vtx, const Idx_t &ia,
   }
 
   // Allocate the csr data structures
-  Idx_t    row_offsets(compressed_size + 1);
-  Idx_t    col_indices(assembled_entries.n);
-  Double_t values(assembled_entries.n);
+  VecIdx_t    row_offsets(compressed_size + 1);
+  VecIdx_t    col_indices(assembled_entries.n);
+  VecDouble_t values(assembled_entries.n);
 
   // Convert the assembled matrix to a CSR matrix.
   {
@@ -90,8 +91,8 @@ void LocalSolver_t<val_t>::SetupSolver(const Long_t &vtx, const Idx_t &ia,
 }
 
 template <typename val_t>
-void LocalSolver_t<val_t>::SetupUserToCompressMap(const Long_t &vtx,
-                                                  buffer       *bfr) {
+void LocalSolver_t<val_t>::SetupUserToCompressMap(const VecLong_t &vtx,
+                                                  buffer          *bfr) {
   typedef struct {
     ulong id;
     uint  idx;
@@ -136,8 +137,8 @@ void LocalSolver_t<val_t>::SetupUserToCompressMap(const Long_t &vtx,
 }
 
 template <typename val_t>
-void LocalSolver_t<val_t>::Setup(const Long_t &vtx, const Idx_t &ia,
-                                 const Idx_t &ja, const Double_t &va,
+void LocalSolver_t<val_t>::Setup(const VecLong_t &vtx, const VecIdx_t &ia,
+                                 const VecIdx_t &ja, const VecDouble_t &va,
                                  const Algorithm_t  algorithm,
                                  const std::string &backend,
                                  const int          device_id) {
@@ -174,7 +175,7 @@ template <typename val_t> LocalSolver_t<val_t>::LocalSolver_t() {
   input_size      = 0;
   compressed_size = 0;
   solver          = nullptr;
-  u_to_c          = Int_t();
+  u_to_c          = VecInt_t();
 }
 
 template <typename val_t> LocalSolver_t<val_t>::~LocalSolver_t() {

@@ -4,9 +4,9 @@
 
 #include "platform.hpp"
 
-static void generateCoarseBasis(DFloat_t &b, const DFloat_t &z,
+static void generateCoarseBasis(VecDfloat_t &b, const VecDfloat_t &z,
                                 const unsigned Nqf, const unsigned Nqc) {
-  Double_t z0(Nqf), z1(Nqf);
+  VecDouble_t z0(Nqf), z1(Nqf);
   for (size_t i = 0; i < Nqf; i++) {
     z0[i] = 0.5 * (1 - z[i]);
     z1[i] = 0.5 * (1 + z[i]);
@@ -15,13 +15,13 @@ static void generateCoarseBasis(DFloat_t &b, const DFloat_t &z,
   for (unsigned l = 0; l < Nqc; l++) {
     const unsigned ll = l + 1;
 
-    Double_t zr(z0);
+    VecDouble_t zr(z0);
     if (ll % 2 == 0) zr = z1;
 
-    Double_t zs(z0);
+    VecDouble_t zs(z0);
     if (ll == 3 || ll == 4 || ll == 7 || ll == 8) zs = z1;
 
-    Double_t zt(z0);
+    VecDouble_t zt(z0);
     if (ll > 4) zt = z1;
 
     const size_t Nqf2 = Nqf * Nqf;
@@ -35,8 +35,8 @@ static void generateCoarseBasis(DFloat_t &b, const DFloat_t &z,
   }
 }
 
-static void setupGalerkinCoarseSystem(UInt_t &Ai, UInt_t &Aj, Double_t &Av,
-                                      const size_t        Nqc,
+static void setupGalerkinCoarseSystem(VecUInt_t &Ai, VecUInt_t &Aj,
+                                      VecDouble_t &Av, const size_t Nqc,
                                       const mesh_t *const mesh,
                                       elliptic_t *const   elliptic) {
   const size_t Nqf = mesh->Nq;
@@ -44,7 +44,7 @@ static void setupGalerkinCoarseSystem(UInt_t &Ai, UInt_t &Aj, Double_t &Av,
   // Sanity check:
   assert(Npf == Nqf * Nqf * Nqf);
 
-  DFloat_t b(Nqc * Npf), z(mesh->gllz, mesh->gllz + Nqf);
+  VecDfloat_t b(Nqc * Npf), z(mesh->gllz, mesh->gllz + Nqf);
   generateCoarseBasis(b, z, Nqf, Nqc);
 
   const size_t Nelements = (size_t)(mesh->Nelements);
@@ -52,7 +52,7 @@ static void setupGalerkinCoarseSystem(UInt_t &Ai, UInt_t &Aj, Double_t &Av,
   // Sanity check:
   assert(Nlocal == Nelements * Npf);
 
-  DFloat_t u(Nlocal), w(Nlocal);
+  VecDfloat_t u(Nlocal), w(Nlocal);
   for (size_t i = 0; i < Nlocal; i++) u[i] = w[i] = 0;
 
   auto o_ud = platform->device.malloc(Nlocal * sizeof(dfloat));
@@ -102,8 +102,9 @@ static void setupGalerkinCoarseSystem(UInt_t &Ai, UInt_t &Aj, Double_t &Av,
   }
 }
 
-void setupCoarseSystem(Long_t &gIds, UInt_t &Ai, UInt_t &Aj, Double_t &Av,
-                       elliptic_t *const ecrs, elliptic_t *const efine) {
+void setupCoarseSystem(VecLong_t &gIds, VecUInt_t &Ai, VecUInt_t &Aj,
+                       VecDouble_t &Av, elliptic_t *const ecrs,
+                       elliptic_t *const efine) {
   const mesh_t *const meshc = ecrs->mesh;
   const mesh_t *const meshf = efine->mesh;
 
@@ -114,7 +115,7 @@ void setupCoarseSystem(Long_t &gIds, UInt_t &Ai, UInt_t &Aj, Double_t &Av,
   for (size_t j = 0; j < ndofs; j++) gIds[j] = meshc->globalIds[j];
 
   // Apply the mask for Dirichlet BCs.
-  DLong_t maskIds(ecrs->Nmasked);
+  VecDlong_t maskIds(ecrs->Nmasked);
   ecrs->o_maskIds.copyTo(maskIds.data(), ecrs->Nmasked * sizeof(dlong));
   for (size_t n = 0; n < ecrs->Nmasked; n++) gIds[maskIds[n]] = 0;
 
