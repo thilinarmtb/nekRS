@@ -2,17 +2,15 @@
 #include <cmath>
 #include <cstdlib>
 
-#include "algorithmGemv.hpp"
+#include "gmgGemv.hpp"
 
-#include "localSolver.hpp"
+#include "gmgLocalSolver.hpp"
 
 template <typename val_t>
-void LocalSolver_t<val_t>::SetupSolver(const VecLong_t &vtx, const VecIdx_t &ia,
-                                       const VecIdx_t    &ja,
-                                       const VecDouble_t &va,
-                                       const Algorithm_t  algorithm,
-                                       const std::string &backend,
-                                       const int device_id, buffer *bfr) {
+void GMGLocalSolver_t<val_t>::SetupSolver(
+    const VecLong_t &vtx, const VecIdx_t &ia, const VecIdx_t &ja,
+    const VecDouble_t &va, const GMGAlgorithm_t &algorithm,
+    const std::string &backend, const int device_id, buffer *bfr) {
   typedef struct {
     uint   r, c;
     double v;
@@ -81,9 +79,9 @@ void LocalSolver_t<val_t>::SetupSolver(const VecLong_t &vtx, const VecIdx_t &ia,
   }
 
   switch (algorithm) {
-  case Algorithm_t::Gemv: solver = new AlgorithmGemv_t<val_t>{}; break;
-  case Algorithm_t::Xxt: break;
-  case Algorithm_t::Cholmod: break;
+  case GMGAlgorithm_t::Gemv: solver = new GMGGemv_t<val_t>{}; break;
+  case GMGAlgorithm_t::Xxt: break;
+  case GMGAlgorithm_t::Cholmod: break;
   default: break;
   }
 
@@ -91,8 +89,8 @@ void LocalSolver_t<val_t>::SetupSolver(const VecLong_t &vtx, const VecIdx_t &ia,
 }
 
 template <typename val_t>
-void LocalSolver_t<val_t>::SetupUserToCompressMap(const VecLong_t &vtx,
-                                                  buffer          *bfr) {
+void GMGLocalSolver_t<val_t>::SetupUserToCompressMap(const VecLong_t &vtx,
+                                                     buffer          *bfr) {
   typedef struct {
     ulong id;
     uint  idx;
@@ -137,11 +135,11 @@ void LocalSolver_t<val_t>::SetupUserToCompressMap(const VecLong_t &vtx,
 }
 
 template <typename val_t>
-void LocalSolver_t<val_t>::Setup(const VecLong_t &vtx, const VecIdx_t &ia,
-                                 const VecIdx_t &ja, const VecDouble_t &va,
-                                 const Algorithm_t  algorithm,
-                                 const std::string &backend,
-                                 const int          device_id) {
+void GMGLocalSolver_t<val_t>::Setup(const VecLong_t &vtx, const VecIdx_t &ia,
+                                    const VecIdx_t &ja, const VecDouble_t &va,
+                                    const GMGAlgorithm_t &algorithm,
+                                    const std::string    &backend,
+                                    const int             device_id) {
   input_size = vtx.size();
 
   // Sanity checks:
@@ -158,7 +156,7 @@ void LocalSolver_t<val_t>::Setup(const VecLong_t &vtx, const VecIdx_t &ia,
 }
 
 template <typename val_t>
-void LocalSolver_t<val_t>::Solve(Vec_t &x_, const Vec_t &rhs_) {
+void GMGLocalSolver_t<val_t>::Solve(Vec_t &x_, const Vec_t &rhs_) {
   for (unsigned i = 0; i < compressed_size; i++) rhs[i] = 0;
   for (unsigned i = 0; i < input_size; i++)
     if (u_to_c[i] >= 0) rhs[u_to_c[i]] += rhs_[i];
@@ -171,13 +169,13 @@ void LocalSolver_t<val_t>::Solve(Vec_t &x_, const Vec_t &rhs_) {
   }
 }
 
-template <typename val_t> LocalSolver_t<val_t>::LocalSolver_t() {
+template <typename val_t> GMGLocalSolver_t<val_t>::GMGLocalSolver_t() {
   input_size      = 0;
   compressed_size = 0;
   solver          = nullptr;
   u_to_c          = VecInt_t();
 }
 
-template <typename val_t> LocalSolver_t<val_t>::~LocalSolver_t() {
+template <typename val_t> GMGLocalSolver_t<val_t>::~GMGLocalSolver_t() {
   delete solver;
 }

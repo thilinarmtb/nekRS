@@ -102,9 +102,9 @@ static void setupGalerkinCoarseSystem(VecUInt_t &Ai, VecUInt_t &Aj,
   }
 }
 
-void setupCoarseSystem(VecLong_t &gIds, VecUInt_t &Ai, VecUInt_t &Aj,
-                       VecDouble_t &Av, elliptic_t *const ecrs,
-                       elliptic_t *const efine) {
+void gmgSetupCoarseSystem(VecLong_t &gIds, VecUInt_t &Ai, VecUInt_t &Aj,
+                          VecDouble_t &Av, elliptic_t *const ecrs,
+                          elliptic_t *const efine) {
   const mesh_t *const meshc = ecrs->mesh;
   const mesh_t *const meshf = efine->mesh;
 

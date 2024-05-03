@@ -23,11 +23,11 @@ void GMGSolver_t<val_t>::SetupCoarseAverage(const VecLong_t &vtx,
 }
 
 template <typename val_t>
-void GMGSolver_t<val_t>::SetupLocalSolver(const VecLong_t   &vtx,
-                                          const VecDouble_t &va,
-                                          const Algorithm_t &algo,
-                                          const std::string &backend,
-                                          const int          device_id) {
+void GMGSolver_t<val_t>::SetupLocalSolver(const VecLong_t      &vtx,
+                                          const VecDouble_t    &va,
+                                          const GMGAlgorithm_t &algo,
+                                          const std::string    &backend,
+                                          const int             device_id) {
   // FIXME: The following should be part of the input.
   const size_t nnz = shared_size * crs_size;
   VecIdx_t     ia(nnz);
@@ -42,7 +42,7 @@ void GMGSolver_t<val_t>::SetupLocalSolver(const VecLong_t   &vtx,
     }
   }
 
-  solver = new LocalSolver_t<val_t>{};
+  solver = new GMGLocalSolver_t<val_t>{};
   solver->Setup(vtx, ia, ja, va, algo, backend, device_id);
 }
 
@@ -53,9 +53,9 @@ template <typename val_t> void GMGSolver_t<val_t>::CoarseAverage(Vec_t &vec) {
 
 template <typename val_t>
 void GMGSolver_t<val_t>::Setup(const VecLong_t &vtx, const VecDouble_t &amat,
-                               const VecDouble_t &mask,
-                               const VecInt_t    &frontier,
-                               const Algorithm_t &algo) {
+                               const VecDouble_t    &mask,
+                               const VecInt_t       &frontier,
+                               const GMGAlgorithm_t &algo) {
   VecLong_t vtx_ll(shared_size);
   double    maskm = std::numeric_limits<double>::max();
   for (size_t i = 0; i < shared_size; i++) {
@@ -136,7 +136,7 @@ template <typename val_t> GMGSolver_t<val_t>::GMGSolver_t() {
   const size_t  nnz    = shared_size * crs_size;
   VecDouble_t   amat(p_amat, p_amat + nnz);
 
-  Setup(vtx, amat, mask, frontier, Algorithm_t::Gemv);
+  Setup(vtx, amat, mask, frontier, GMGAlgorithm_t::Gemv);
 
   if (sizeof(val_t) == sizeof(double)) dom = gs_double;
   if (sizeof(val_t) == sizeof(float)) dom = gs_float;

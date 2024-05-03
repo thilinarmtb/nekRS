@@ -5,9 +5,9 @@
 
 #include "gslib.h"
 
-enum class Algorithm_t : std::int8_t { Gemv = 0, Xxt, Cholmod };
+enum class GMGAlgorithm_t : std::int8_t { Gemv = 0, Xxt, Cholmod };
 
-template <typename val_t> class AlgorithmInterface_t {
+template <typename val_t> class GMGLocalSolverInterface_t {
   using Vec_t = std::vector<val_t>;
 
 public:
@@ -17,39 +17,39 @@ public:
 
   virtual void Solve(Vec_t &x, const Vec_t &rhs) = 0;
 
-  virtual ~AlgorithmInterface_t() = default;
+  virtual ~GMGLocalSolverInterface_t() = default;
 };
 
-template <typename val_t> class LocalSolver_t {
+template <typename val_t> class GMGLocalSolver_t {
   using Vec_t = std::vector<val_t>;
 
 public:
-  LocalSolver_t();
+  GMGLocalSolver_t();
 
   void Setup(const VecLong_t &vtx, const VecIdx_t &ia, const VecIdx_t &ja,
-             const VecDouble_t &va, const Algorithm_t algorithm,
+             const VecDouble_t &va, const GMGAlgorithm_t &algorithm,
              const std::string &backend, const int device_id);
 
   void Solve(Vec_t &x, const Vec_t &rhs);
 
-  ~LocalSolver_t();
+  ~GMGLocalSolver_t();
 
 private:
   void SetupUserToCompressMap(const VecLong_t &vtx, buffer *bfr);
 
   void SetupSolver(const VecLong_t &vtx, const VecIdx_t &ia, const VecIdx_t &ja,
-                   const VecDouble_t &va, const Algorithm_t algorithm,
+                   const VecDouble_t &va, const GMGAlgorithm_t &algorithm,
                    const std::string &backend, const int device_id,
                    buffer *bfr);
 
 private:
-  unsigned                     input_size, compressed_size;
-  Vec_t                        x, rhs;
-  VecInt_t                     u_to_c;
-  AlgorithmInterface_t<val_t> *solver;
+  unsigned                          input_size, compressed_size;
+  Vec_t                             x, rhs;
+  VecInt_t                          u_to_c;
+  GMGLocalSolverInterface_t<val_t> *solver;
 };
 
-template class LocalSolver_t<float>;
-template class LocalSolver_t<double>;
+template class GMGLocalSolver_t<float>;
+template class GMGLocalSolver_t<double>;
 
 #endif // __LOCAL_SOLVER_HPP__

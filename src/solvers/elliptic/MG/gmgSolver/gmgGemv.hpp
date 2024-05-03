@@ -3,14 +3,14 @@
 #include "gemv.h"
 #include "lapacke.h"
 
-#include "localSolver.hpp"
+#include "gmgLocalSolver.hpp"
 
 template <typename val_t>
-class AlgorithmGemv_t : public AlgorithmInterface_t<val_t> {
+class GMGGemv_t : public GMGLocalSolverInterface_t<val_t> {
   using Vec_t = std::vector<val_t>;
 
 public:
-  AlgorithmGemv_t();
+  GMGGemv_t();
 
   void Setup(const VecIdx_t &row_offsets, const VecIdx_t &col_indices,
              const VecDouble_t &values, const std::string &backend,
@@ -18,7 +18,7 @@ public:
 
   void Solve(Vec_t &x, const Vec_t &rhs) override;
 
-  ~AlgorithmGemv_t();
+  ~GMGGemv_t();
 
 private:
   struct gemv_t *gemv;
@@ -26,16 +26,13 @@ private:
   void          *d_r, *d_x;
 };
 
-template <typename val_t> AlgorithmGemv_t<val_t>::AlgorithmGemv_t() {
-  gemv = nullptr;
-}
+template <typename val_t> GMGGemv_t<val_t>::GMGGemv_t() { gemv = nullptr; }
 
 template <typename val_t>
-void AlgorithmGemv_t<val_t>::Setup(const VecIdx_t    &row_offsets,
-                                   const VecIdx_t    &col_indices,
-                                   const VecDouble_t &values,
-                                   const std::string &backend,
-                                   const int          device_id) {
+void GMGGemv_t<val_t>::Setup(const VecIdx_t    &row_offsets,
+                             const VecIdx_t    &col_indices,
+                             const VecDouble_t &values,
+                             const std::string &backend, const int device_id) {
 
   const size_t num_rows = row_offsets.size() - 1;
   size                  = sizeof(val_t) * num_rows;
@@ -67,13 +64,13 @@ void AlgorithmGemv_t<val_t>::Setup(const VecIdx_t    &row_offsets,
 }
 
 template <typename val_t>
-void AlgorithmGemv_t<val_t>::Solve(Vec_t &x, const Vec_t &rhs) {
+void GMGGemv_t<val_t>::Solve(Vec_t &x, const Vec_t &rhs) {
   gemv_copy(d_r, rhs.data(), size, GEMV_H2D);
   gemv_run(d_x, d_r, gemv);
   gemv_copy(x.data(), d_x, size, GEMV_D2H);
 }
 
-template <typename val_t> AlgorithmGemv_t<val_t>::~AlgorithmGemv_t() {
+template <typename val_t> GMGGemv_t<val_t>::~GMGGemv_t() {
   gemv_device_free(&d_r);
   gemv_device_free(&d_x);
   gemv_finalize(&gemv);
