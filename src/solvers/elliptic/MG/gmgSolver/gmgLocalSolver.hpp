@@ -11,7 +11,7 @@ template <typename val_t> class GMGLocalSolverInterface_t {
   using Vec_t = std::vector<val_t>;
 
 public:
-  virtual void Setup(const VecIdx_t &row_offsets, const VecIdx_t &col_indices,
+  virtual void Setup(const VecUInt_t &row_offsets, const VecUInt_t &col_indices,
                      const std::vector<double> &values,
                      const std::string &backend, const int device_id) = 0;
 
@@ -24,11 +24,10 @@ template <typename val_t> class GMGLocalSolver_t {
   using Vec_t = std::vector<val_t>;
 
 public:
-  GMGLocalSolver_t();
-
-  void Setup(const VecLong_t &vtx, const VecIdx_t &ia, const VecIdx_t &ja,
-             const VecDouble_t &va, const GMGAlgorithm_t &algorithm,
-             const std::string &backend, const int device_id);
+  GMGLocalSolver_t(const VecLong_t &vtx, const VecUInt_t &ia,
+                   const VecUInt_t &ja, const VecDouble_t &va,
+                   const GMGAlgorithm_t &algorithm, const std::string &backend,
+                   const int device_id);
 
   void Solve(Vec_t &x, const Vec_t &rhs);
 
@@ -37,7 +36,7 @@ public:
 private:
   void SetupUserToCompressMap(const VecLong_t &vtx, buffer *bfr);
 
-  void SetupSolver(const VecLong_t &vtx, const VecIdx_t &ia, const VecIdx_t &ja,
+  void SetupSolver(const VecUInt_t &ia, const VecUInt_t &ja,
                    const VecDouble_t &va, const GMGAlgorithm_t &algorithm,
                    const std::string &backend, const int device_id,
                    buffer *bfr);

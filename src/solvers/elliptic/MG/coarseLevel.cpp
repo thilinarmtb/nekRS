@@ -45,6 +45,12 @@ MGSolver_t::coarseLevel_t::coarseLevel_t(setupAide options, MPI_Comm comm)
   this->solvePtr = &MGSolver_t::coarseLevel_t::solve;
 }
 
+void MGSolver_t::coarseLevel_t::setupSolver(VecLong_t &Aids, VecUInt_t &Ai, VecUInt_t &Aj, VecDouble_t &Av,
+                                            bool nullSpace)
+{
+  GMGSolver = new GMGSolver_t<pfloat>(Aids, Ai, Aj, Av);
+}
+
 void MGSolver_t::coarseLevel_t::setupSolver(
                hlong* globalRowStarts,
                dlong nnz,                    //--
@@ -155,8 +161,12 @@ void MGSolver_t::coarseLevel_t::setupSolver(
       useFP32,
       std::stoi(getenv("NEKRS_GPU_MPI")),
       cfg);
-  } else if (options.compareArgs("COARSE SOLVER", "SCHWARZSOLVER")) {
-    GMGSolver = new GMGSolver_t<pfloat>();
+  } else if (options.compareArgs("COARSE SOLVER", "GMGSOLVER")) {
+    // We shouldn't be here:
+    std::string amgSolver;
+    options.getArgs("COARSE SOLVER", amgSolver);
+    nrsAbort(platform->comm.mpiComm, EXIT_FAILURE,
+             "COARSE SOLVER <%s> setup should be done using a separate function!\n", amgSolver.c_str());
   } else {
     std::string amgSolver;
     options.getArgs("COARSE SOLVER", amgSolver);
@@ -215,7 +225,7 @@ void MGSolver_t::coarseLevel_t::solve(occa::memory& o_rhs, occa::memory& o_x)
       }
     } else if (options.compareArgs("COARSE SOLVER", "AMGX")){
         AMGX->solve(o_Gx.ptr(), o_xBuffer.ptr());
-    } else if (options.compareArgs("COARSE SOLVER", "SCHWARZSOLVER")){
+    } else if (options.compareArgs("COARSE SOLVER", "GMGSOLVER")){
         GMGSolver->Solve(o_Gx, o_xBuffer);
     }
 

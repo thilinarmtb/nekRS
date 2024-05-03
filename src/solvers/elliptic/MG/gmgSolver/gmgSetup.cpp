@@ -103,9 +103,9 @@ static void setupGalerkinCoarseSystem(VecUInt_t &Ai, VecUInt_t &Aj,
 }
 
 void gmgSetupCoarseSystem(VecLong_t &gIds, VecUInt_t &Ai, VecUInt_t &Aj,
-                          VecDouble_t &Av, elliptic_t *const ecrs,
+                          VecDouble_t &Av, elliptic_t *const ecoarse,
                           elliptic_t *const efine) {
-  const mesh_t *const meshc = ecrs->mesh;
+  const mesh_t *const meshc = ecoarse->mesh;
   const mesh_t *const meshf = efine->mesh;
 
   // Set global ids: copy ids from nekRS.
@@ -115,9 +115,9 @@ void gmgSetupCoarseSystem(VecLong_t &gIds, VecUInt_t &Ai, VecUInt_t &Aj,
   for (size_t j = 0; j < ndofs; j++) gIds[j] = meshc->globalIds[j];
 
   // Apply the mask for Dirichlet BCs.
-  VecDlong_t maskIds(ecrs->Nmasked);
-  ecrs->o_maskIds.copyTo(maskIds.data(), ecrs->Nmasked * sizeof(dlong));
-  for (size_t n = 0; n < ecrs->Nmasked; n++) gIds[maskIds[n]] = 0;
+  VecDlong_t maskIds(ecoarse->Nmasked);
+  ecoarse->o_maskIds.copyTo(maskIds.data(), ecoarse->Nmasked * sizeof(dlong));
+  for (size_t n = 0; n < ecoarse->Nmasked; n++) gIds[maskIds[n]] = 0;
 
   // Setup the coarse system.
   const size_t nnz = (size_t)Nqc * ndofs;

@@ -7,6 +7,7 @@
 template <typename val_t>
 void GMGSolver_t<val_t>::SetupCoarseAverage(const VecLong_t &vtx,
                                             const MPI_Comm   comm) {
+  // Setup gs handle:
   struct comm c;
   comm_init(&c, comm);
 
@@ -20,67 +21,15 @@ void GMGSolver_t<val_t>::SetupCoarseAverage(const VecLong_t &vtx,
   for (size_t i = 0; i < shared_size; i++) inv_mul[i] = 1.0 / inv_mul[i];
 
   comm_free(&c);
-}
 
-template <typename val_t>
-void GMGSolver_t<val_t>::SetupLocalSolver(const VecLong_t      &vtx,
-                                          const VecDouble_t    &va,
-                                          const GMGAlgorithm_t &algo,
-                                          const std::string    &backend,
-                                          const int             device_id) {
-  // FIXME: The following should be part of the input.
-  const size_t nnz = shared_size * crs_size;
-  VecIdx_t     ia(nnz);
-  VecIdx_t     ja(nnz);
-  const size_t num_elements = shared_size / crs_size;
-  for (size_t e = 0; e < num_elements; e++) {
-    for (size_t j = 0; j < crs_size; j++) {
-      for (size_t i = 0; i < crs_size; i++) {
-        ia[e * crs_size * crs_size + j * crs_size + i] = e * crs_size + i;
-        ja[e * crs_size * crs_size + j * crs_size + i] = e * crs_size + j;
-      }
-    }
-  }
-
-  solver = new GMGLocalSolver_t<val_t>{};
-  solver->Setup(vtx, ia, ja, va, algo, backend, device_id);
+  // Setup the gs domain:
+  if (sizeof(val_t) == sizeof(double)) dom = gs_double;
+  if (sizeof(val_t) == sizeof(float)) dom = gs_float;
 }
 
 template <typename val_t> void GMGSolver_t<val_t>::CoarseAverage(Vec_t &vec) {
   gs(vec.data(), dom, gs_add, 0, gsh, &bfr);
   for (size_t i = 0; i < shared_size; i++) rhs[i] *= inv_mul[i];
-}
-
-template <typename val_t>
-void GMGSolver_t<val_t>::Setup(const VecLong_t &vtx, const VecDouble_t &amat,
-                               const VecDouble_t    &mask,
-                               const VecInt_t       &frontier,
-                               const GMGAlgorithm_t &algo) {
-  VecLong_t vtx_ll(shared_size);
-  double    maskm = std::numeric_limits<double>::max();
-  for (size_t i = 0; i < shared_size; i++) {
-    const double maski = (frontier[i] == 1) ? 0 : mask[i];
-    vtx_ll[i]          = (maski < 0.1) ? 0 : vtx[i];
-    if (maski < maskm) maskm = maski;
-  }
-
-  // Sanity check:
-  const size_t null_space = (maskm < 1e-10) ? 0 : 1;
-  assert(null_space == 0);
-
-  // Setup local Schwarz solver.
-  const auto backend   = platform->device.mode();
-  const auto device_id = platform->device.id();
-  SetupLocalSolver(vtx_ll, amat, algo, backend, device_id);
-
-  // Setup the gather-scatter handle for coarse average.
-  const auto comm = platform->comm.mpiComm;
-  SetupCoarseAverage(vtx_ll, comm);
-
-  // Setup the A matrix:
-  const size_t nnz = shared_size * crs_size;
-  A.reserve(nnz);
-  for (size_t i = 0; i < nnz; i++) A[i] = amat[i];
 }
 
 template <typename val_t>
@@ -116,38 +65,47 @@ void GMGSolver_t<val_t>::Solve(occa::memory &o_x, const occa::memory &o_rhs) {
   o_x.copyFrom(x.data(), size, 0);
 }
 
-template <typename val_t> GMGSolver_t<val_t>::GMGSolver_t() {
-  nek::box_crs_setup();
+template <typename val_t>
+GMGSolver_t<val_t>::GMGSolver_t(const VecLong_t &Aids, const VecUInt_t &Ai,
+                                const VecUInt_t &Aj, const VecDouble_t &Av) {
+  // Sanity checks:
+  assert(Ai.size() == Aj.size() && Ai.size() == Av.size());
 
-  crs_size    = nekData.schwz_ncr;
-  user_size   = nekData.nelv * crs_size;
-  shared_size = nekData.schwz_ne * crs_size;
+  user_size = Aids.size();
+  crs_size  = Ai.size() / user_size;
 
-  const hlong *p_vtx = (const hlong *)nekData.schwz_vtx;
-  VecLong_t    vtx(p_vtx, p_vtx + shared_size);
+  VecInt_t frontier;
+  // TODO: Call gmgOverlapped(Aids, Ai, Ai, Av, frontier);
+  shared_size = Aids.size();
 
-  const double *p_mask = (const double *)nekData.schwz_mask;
-  VecDouble_t   mask(p_mask, p_mask + shared_size);
+  // Setup local solver:
+  VecLong_t Aids_(shared_size);
+  unsigned  maskm = std::numeric_limits<unsigned>::max();
+  for (size_t i = 0; i < shared_size; i++) {
+    const unsigned mask = (frontier[i] == 1 || Aids[i] == 0) ? 0 : 1;
+    Aids_[i]            = (double)mask * Aids[i];
+    if (mask < maskm) maskm = mask;
+  }
+  assert(maskm == 0);
 
-  const int *p_frontier = (const int *)nekData.schwz_frontier;
-  VecInt_t   frontier(p_frontier, p_frontier + shared_size);
+  auto algo = GMGAlgorithm_t::Gemv;
+  auto mode = platform->device.mode();
+  auto id   = platform->device.id();
+  solver    = new GMGLocalSolver_t<val_t>(Aids_, Ai, Aj, Av, algo, mode, id);
 
-  const double *p_amat = (const double *)nekData.schwz_amat;
-  const size_t  nnz    = shared_size * crs_size;
-  VecDouble_t   amat(p_amat, p_amat + nnz);
+  // Setup the gather-scatter handle for coarse average.
+  SetupCoarseAverage(Aids_, platform->comm.mpiComm);
 
-  Setup(vtx, amat, mask, frontier, GMGAlgorithm_t::Gemv);
+  // Copy the unassembled A matrix:
+  const size_t nnz = shared_size * crs_size;
+  A.reserve(nnz);
+  for (size_t i = 0; i < nnz; i++) A[i] = Av[i];
 
-  if (sizeof(val_t) == sizeof(double)) dom = gs_double;
-  if (sizeof(val_t) == sizeof(float)) dom = gs_float;
-
+  // Reserve and initialize work arrays:
   x.reserve(shared_size);
   rhs.reserve(shared_size);
   inv_mul.reserve(shared_size);
-
   buffer_init(&bfr, 1024);
-  gsh    = nullptr;
-  solver = nullptr;
 }
 
 template <typename val_t> GMGSolver_t<val_t>::~GMGSolver_t() {

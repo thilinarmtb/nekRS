@@ -7,25 +7,27 @@
 #include "gmgLocalSolver.hpp"
 
 template <typename val_t>
-void GMGLocalSolver_t<val_t>::SetupSolver(
-    const VecLong_t &vtx, const VecIdx_t &ia, const VecIdx_t &ja,
-    const VecDouble_t &va, const GMGAlgorithm_t &algorithm,
-    const std::string &backend, const int device_id, buffer *bfr) {
+void GMGLocalSolver_t<val_t>::SetupSolver(const VecUInt_t      &Ai,
+                                          const VecUInt_t      &Aj,
+                                          const VecDouble_t    &Av,
+                                          const GMGAlgorithm_t &algorithm,
+                                          const std::string    &backend,
+                                          const int device_id, buffer *bfr) {
   typedef struct {
     uint   r, c;
     double v;
   } entry_t;
 
-  const size_t nnz = ia.size();
+  const size_t nnz = Ai.size();
   struct array entries;
   {
     array_init(entry_t, &entries, nnz);
 
     entry_t eij;
     for (unsigned z = 0; z < nnz; z++) {
-      int i = u_to_c[ia[z]], j = u_to_c[ja[z]];
+      int i = u_to_c[Ai[z]], j = u_to_c[Aj[z]];
       if (i < 0 || j < 0) continue;
-      eij.r = i, eij.c = j, eij.v = va[z];
+      eij.r = i, eij.c = j, eij.v = Av[z];
       array_cat(entry_t, &entries, &eij, 1);
     }
 
@@ -54,8 +56,8 @@ void GMGLocalSolver_t<val_t>::SetupSolver(
   }
 
   // Allocate the csr data structures
-  VecIdx_t    row_offsets(compressed_size + 1);
-  VecIdx_t    col_indices(assembled_entries.n);
+  VecUInt_t   row_offsets(compressed_size + 1);
+  VecUInt_t   col_indices(assembled_entries.n);
   VecDouble_t values(assembled_entries.n);
 
   // Convert the assembled matrix to a CSR matrix.
@@ -89,7 +91,7 @@ void GMGLocalSolver_t<val_t>::SetupSolver(
 }
 
 template <typename val_t>
-void GMGLocalSolver_t<val_t>::SetupUserToCompressMap(const VecLong_t &vtx,
+void GMGLocalSolver_t<val_t>::SetupUserToCompressMap(const VecLong_t &Aids,
                                                      buffer          *bfr) {
   typedef struct {
     ulong id;
@@ -103,7 +105,7 @@ void GMGLocalSolver_t<val_t>::SetupUserToCompressMap(const VecLong_t &vtx,
 
     vertex_id_t vid;
     for (unsigned i = 0; i < input_size; i++) {
-      vid.id = vtx[i], vid.idx = i;
+      vid.id = Aids[i], vid.idx = i;
       array_cat(vertex_id_t, &vids, &vid, 1);
     }
   }
@@ -135,27 +137,6 @@ void GMGLocalSolver_t<val_t>::SetupUserToCompressMap(const VecLong_t &vtx,
 }
 
 template <typename val_t>
-void GMGLocalSolver_t<val_t>::Setup(const VecLong_t &vtx, const VecIdx_t &ia,
-                                    const VecIdx_t &ja, const VecDouble_t &va,
-                                    const GMGAlgorithm_t &algorithm,
-                                    const std::string    &backend,
-                                    const int             device_id) {
-  input_size = vtx.size();
-
-  // Sanity checks:
-  assert(ia.size() == ja.size() && ia.size() == va.size());
-
-  buffer bfr;
-  buffer_init(&bfr, 1024);
-
-  SetupUserToCompressMap(vtx, &bfr);
-
-  SetupSolver(vtx, ia, ja, va, algorithm, backend, device_id, &bfr);
-
-  buffer_free(&bfr);
-}
-
-template <typename val_t>
 void GMGLocalSolver_t<val_t>::Solve(Vec_t &x_, const Vec_t &rhs_) {
   for (unsigned i = 0; i < compressed_size; i++) rhs[i] = 0;
   for (unsigned i = 0; i < input_size; i++)
@@ -169,11 +150,21 @@ void GMGLocalSolver_t<val_t>::Solve(Vec_t &x_, const Vec_t &rhs_) {
   }
 }
 
-template <typename val_t> GMGLocalSolver_t<val_t>::GMGLocalSolver_t() {
-  input_size      = 0;
-  compressed_size = 0;
-  solver          = nullptr;
-  u_to_c          = VecInt_t();
+template <typename val_t>
+GMGLocalSolver_t<val_t>::GMGLocalSolver_t(
+    const VecLong_t &Aids, const VecUInt_t &Ai, const VecUInt_t &Aj,
+    const VecDouble_t &Av, const GMGAlgorithm_t &algorithm,
+    const std::string &backend, const int device_id) {
+  input_size = Aids.size();
+
+  buffer bfr;
+  buffer_init(&bfr, 1024);
+
+  SetupUserToCompressMap(Aids, &bfr);
+
+  SetupSolver(Ai, Aj, Av, algorithm, backend, device_id, &bfr);
+
+  buffer_free(&bfr);
 }
 
 template <typename val_t> GMGLocalSolver_t<val_t>::~GMGLocalSolver_t() {

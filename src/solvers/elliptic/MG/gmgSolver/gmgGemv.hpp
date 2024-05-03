@@ -12,7 +12,7 @@ class GMGGemv_t : public GMGLocalSolverInterface_t<val_t> {
 public:
   GMGGemv_t();
 
-  void Setup(const VecIdx_t &row_offsets, const VecIdx_t &col_indices,
+  void Setup(const VecUInt_t &row_offsets, const VecUInt_t &col_indices,
              const VecDouble_t &values, const std::string &backend,
              const int device_id) override;
 
@@ -29,8 +29,8 @@ private:
 template <typename val_t> GMGGemv_t<val_t>::GMGGemv_t() { gemv = nullptr; }
 
 template <typename val_t>
-void GMGGemv_t<val_t>::Setup(const VecIdx_t    &row_offsets,
-                             const VecIdx_t    &col_indices,
+void GMGGemv_t<val_t>::Setup(const VecUInt_t   &row_offsets,
+                             const VecUInt_t   &col_indices,
                              const VecDouble_t &values,
                              const std::string &backend, const int device_id) {
 
