@@ -1,5 +1,5 @@
-#if !defined(__SCHWARZ_SOLVER_HPP__)
-#define __SCHWARZ_SOLVER_HPP__
+#if !defined(__GMG_SOLVER_HPP__)
+#define __GMG_SOLVER_HPP__
 
 #include "gmgTypes.hpp"
 
@@ -33,4 +33,4 @@ private:
 template class GMGSolver_t<float>;
 template class GMGSolver_t<double>;
 
-#endif // __SCHWARZ_SOLVER_HPP__
+#endif // __GMG_SOLVER_HPP__

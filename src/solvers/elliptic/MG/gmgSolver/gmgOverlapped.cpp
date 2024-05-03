@@ -2,7 +2,27 @@
 #include <cstdio>
 #include <cstdlib>
 
+#include "gmgOverlapped.hpp"
+
 #include "gslib.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+static void comm_split_(const struct comm *s, int bin, int key, struct comm *d,
+                        const char *file, unsigned line);
+
+static int find_frontier(struct array *uelems, uint ne, const long long *eids,
+                         unsigned nv, struct comm *ci, buffer *bfr);
+
+void find_overlapped_system(unsigned *nei, long long *eids, unsigned nv,
+                            long long *vids, double *xyz, double *mask,
+                            double *mat, int *frontier, unsigned nw, int *wids,
+                            MPI_Comm comm, unsigned max_ne);
+#ifdef __cplusplus
+}
+#endif
 
 /* comm_split_() and comm_split() should be removed once gslib is updated */
 static void comm_split_(const struct comm *s, int bin, int key, struct comm *d,
@@ -82,189 +102,6 @@ static int find_frontier(struct array *uelems, uint ne, const long long *eids,
   return maxf;
 }
 
-void parrsb_fetch_nbrs(unsigned *nei, long long *eids, unsigned nv,
-                       long long *vids, double *xyz, double *mask, double *mat,
-                       unsigned *nwi, int *frontier, const MPI_Comm comm,
-                       unsigned maxne) {
-  struct vtx_t {
-    ulong id;
-    uint  p, o, seq;
-  };
-
-  size_t ne = *nei, size = nv;
-  size *= ne;
-
-  struct array vtxs;
-  array_init(struct vtx_t, &vtxs, size);
-
-  struct comm ci;
-  comm_init(&ci, comm);
-
-  struct vtx_t vt;
-  for (uint e = 0; e < ne; e++) {
-    for (unsigned v = 0; v < nv; v++) {
-      vt.id = vids[e * nv + v], vt.o = ci.id, vt.p = vt.id % ci.np, vt.seq = e;
-      array_cat(struct vtx_t, &vtxs, &vt, 1);
-    }
-  }
-
-  struct crystal cr;
-  crystal_init(&cr, &ci);
-
-  sarray_transfer(struct vtx_t, &vtxs, p, 1, &cr);
-
-  buffer bfr;
-  buffer_init(&bfr, 1024);
-  sarray_sort(struct vtx_t, vtxs.ptr, vtxs.n, id, 1, &bfr);
-
-  struct array vtx2p;
-  array_init(struct vtx_t, &vtx2p, vtxs.n);
-
-  struct vtx_t *pv = (struct vtx_t *)vtxs.ptr;
-  uint          s  = 0;
-  while (s < vtxs.n) {
-    uint e = s + 1;
-    while (e < vtxs.n && pv[s].id == pv[e].id) e++;
-    for (uint i = s; i < e; i++) {
-      vt = pv[i];
-      for (uint j = s; j < e; j++) {
-        vt.o = pv[j].o;
-        array_cat(struct vtx_t, &vtx2p, &vt, 1);
-      }
-    }
-    s = e;
-  }
-  array_free(&vtxs);
-
-  sarray_transfer(struct vtx_t, &vtx2p, p, 0, &cr);
-  sarray_sort_2(struct vtx_t, vtx2p.ptr, vtx2p.n, seq, 0, o, 0, &bfr);
-
-  uint *offs = tcalloc(uint, ne + 1);
-  uint *proc = tcalloc(uint, ne * 4 + 1), nproc = ne * 4 + 1;
-  uint *work = tcalloc(uint, 1024), nwork = 1024;
-  pv = (struct vtx_t *)vtx2p.ptr, s = 0;
-  uint seq, e;
-  while (s < vtx2p.n) {
-    seq = pv[s].seq, e = s + 1;
-    while (e < vtx2p.n && seq == pv[e].seq) e++;
-
-    if (nwork < e - s + 1)
-      nwork = e - s + 1, work = trealloc(uint, work, nwork);
-    uint n  = 1;
-    work[0] = pv[s].o;
-    for (uint i = s + 1; i < e; i++) {
-      if (work[n - 1] != pv[i].o) work[n] = pv[i].o, n++;
-    }
-
-    offs[seq + 1] = offs[seq] + n;
-    if (offs[seq + 1] >= nproc)
-      nproc = 3 * offs[seq + 1] / 2 + 1, proc = trealloc(uint, proc, nproc);
-    for (uint i = 0, j = offs[seq]; i < n; i++) proc[j + i] = work[i];
-    s = e;
-  }
-  array_free(&vtx2p);
-
-  struct array elems;
-  array_init(struct elem_t, &elems, size);
-
-  unsigned nw = *nwi;
-  if (nw == 0) {
-    for (size_t i = 0; i < size; i++) frontier[i] = 0;
-  }
-
-  unsigned      nd = (nv == 8) ? 3 : 2;
-  struct elem_t et;
-  for (uint e = 0; e < ne; e++) {
-    et.eid = eids[e];
-    for (unsigned v = 0; v < nv; v++) {
-      et.vid[v]      = vids[e * nv + v];
-      et.mask[v]     = mask[e * nv + v];
-      et.frontier[v] = frontier[e * nv + v];
-      for (unsigned d = 0; d < nd; d++)
-        et.xyz[v * nd + d] = xyz[e * nv * nd + v * nd + d];
-      for (unsigned u = 0; u < nv; u++)
-        et.mat[v * nv + u] = mat[e * nv * nv + v * nv + u];
-    }
-    for (uint s = offs[e]; s < offs[e + 1]; s++) {
-      et.p = proc[s];
-      array_cat(struct elem_t, &elems, &et, 1);
-    }
-  }
-  free(offs), free(proc), free(work);
-
-  sarray_transfer(struct elem_t, &elems, p, 1, &cr);
-  crystal_free(&cr);
-
-  // Get rid of the duplicates.
-  struct array uelems;
-  array_init(struct elem_t, &uelems, elems.n / 2 + 1);
-
-  sarray_sort(struct elem_t, elems.ptr, elems.n, eid, 1, &bfr);
-  if (elems.n > 0) {
-    struct elem_t *pe = (struct elem_t *)elems.ptr;
-    array_cat(struct elem_t, &uelems, &pe[0], 1);
-    uint i = 0, j = 1;
-    while (j < elems.n) {
-      if (pe[j].eid != pe[i].eid)
-        array_cat(struct elem_t, &uelems, &pe[j], 1), i = j;
-      j++;
-    }
-  }
-  array_free(&elems);
-
-  sint err = (uelems.n > maxne), maxr = uelems.n, wrk;
-  comm_allreduce(&ci, gs_int, gs_add, &err, 1, &wrk);
-  comm_allreduce(&ci, gs_int, gs_max, &maxr, 1, &wrk);
-  if (err > 0) {
-    if (ci.id == 0) {
-      fprintf(stderr, "maxne = %u is too small ! Try maxne larger than %d\n",
-              maxne, maxr);
-      fflush(stderr);
-    }
-    buffer_free(&bfr), array_free(&uelems), comm_free(&ci);
-    exit(EXIT_FAILURE);
-  }
-
-  *nwi = find_frontier(&uelems, ne, eids, nv, &ci, &bfr);
-
-  // Sort elements first by maximum wave number of it vertices, then by global
-  // element id.
-  struct elem_t *pu = (struct elem_t *)uelems.ptr;
-  for (uint e = 0; e < uelems.n; e++) {
-    unsigned maxf = 0;
-    for (unsigned v = 0; v < nv; v++) {
-      if (pu[e].frontier[v] > maxf) maxf = pu[e].frontier[v];
-    }
-    pu[e].seq = maxf;
-  }
-  sarray_sort_2(struct elem_t, uelems.ptr, uelems.n, seq, 0, eid, 1, &bfr);
-  buffer_free(&bfr);
-
-  // Set output arrays.
-  *nei = uelems.n;
-  pu   = (struct elem_t *)uelems.ptr;
-  for (uint e = 0; e < uelems.n; e++) {
-    eids[e] = pu[e].eid;
-    for (unsigned v = 0; v < nv; v++) {
-      vids[e * nv + v]     = pu[e].vid[v];
-      mask[e * nv + v]     = pu[e].mask[v];
-      frontier[e * nv + v] = pu[e].frontier[v];
-      for (unsigned d = 0; d < nd; d++)
-        xyz[e * nv * nd + v * nd + d] = pu[e].xyz[v * nd + d];
-      for (unsigned u = 0; u < nv; u++)
-        mat[e * nv * nv + v * nv + u] = pu[e].mat[v * nv + u];
-    }
-  }
-
-  struct comm c;
-  comm_split(&ci, ci.id, ci.id, &c);
-  struct gs_data *gsh = gs_setup(vids, uelems.n * nv, &c, 0, gs_pairwise, 0);
-  gs(frontier, gs_int, gs_min, 0, gsh, &bfr);
-  gs_free(gsh), comm_free(&c);
-
-  comm_free(&ci), array_free(&uelems);
-}
-
 struct eid_t {
   ulong eid;
   uint  e;
@@ -287,10 +124,10 @@ static int binary_search(ulong eid, const void *const pe_, uint n) {
   return -1;
 }
 
-void gmgSetupOverlappedSystem(unsigned *nei, long long *eids, unsigned nv,
-                              long long *vids, double *xyz, double *mask,
-                              double *mat, int *frontier, unsigned nw,
-                              int *wids, MPI_Comm comm, unsigned max_ne) {
+void find_overlapped_system(unsigned *nei, long long *eids, unsigned nv,
+                            long long *vids, double *xyz, double *mask,
+                            double *mat, int *frontier, unsigned nw, int *wids,
+                            MPI_Comm comm, unsigned max_ne) {
   const size_t   ne   = *nei;
   const unsigned ndim = (nv == 8) ? 3 : 2;
   // 1. Find neighbor elements of input elements based on vertex connectivity.
@@ -598,3 +435,7 @@ void gmgSetupOverlappedSystem(unsigned *nei, long long *eids, unsigned nv,
 }
 
 #undef comm_split
+
+void gmgFindOverlappedSystem(VecLong_t &Aids, VecUInt_t &Ai, VecUInt_t &Aj,
+                             VecDouble_t &Av, VecInt_t &frontier,
+                             const MPI_Comm comm) {}

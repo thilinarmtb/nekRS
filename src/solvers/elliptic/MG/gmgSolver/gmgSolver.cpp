@@ -4,6 +4,8 @@
 
 #include "gmgSolver.hpp"
 
+#include "gmgOverlapped.hpp"
+
 template <typename val_t>
 void GMGSolver_t<val_t>::SetupCoarseAverage(const VecLong_t &vtx,
                                             const MPI_Comm   comm) {
@@ -66,24 +68,30 @@ void GMGSolver_t<val_t>::Solve(occa::memory &o_x, const occa::memory &o_rhs) {
 }
 
 template <typename val_t>
-GMGSolver_t<val_t>::GMGSolver_t(const VecLong_t &Aids, const VecUInt_t &Ai,
-                                const VecUInt_t &Aj, const VecDouble_t &Av) {
+GMGSolver_t<val_t>::GMGSolver_t(const VecLong_t &Aids_, const VecUInt_t &Ai_,
+                                const VecUInt_t &Aj_, const VecDouble_t &Av_) {
   // Sanity checks:
-  assert(Ai.size() == Aj.size() && Ai.size() == Av.size());
+  assert(Ai_.size() == Aj_.size() && Ai_.size() == Av_.size());
 
-  user_size = Aids.size();
-  crs_size  = Ai.size() / user_size;
+  user_size = Aids_.size();
+  crs_size  = Ai_.size() / user_size;
 
-  VecInt_t frontier;
-  // TODO: Call gmgOverlapped(Aids, Ai, Ai, Av, frontier);
+  VecLong_t   Aids = Aids_;
+  VecUInt_t   Ai   = Ai_;
+  VecUInt_t   Aj   = Aj_;
+  VecDouble_t Av   = Av_;
+
+  auto comm = platform->comm.mpiComm;
+
+  VecInt_t frontier(user_size);
+  gmgFindOverlappedSystem(Aids, Ai, Ai, Av, frontier, comm);
   shared_size = Aids.size();
 
   // Setup local solver:
-  VecLong_t Aids_(shared_size);
-  unsigned  maskm = std::numeric_limits<unsigned>::max();
+  unsigned maskm = std::numeric_limits<unsigned>::max();
   for (size_t i = 0; i < shared_size; i++) {
     const unsigned mask = (frontier[i] == 1 || Aids[i] == 0) ? 0 : 1;
-    Aids_[i]            = (double)mask * Aids[i];
+    Aids[i]             = (double)mask * Aids[i];
     if (mask < maskm) maskm = mask;
   }
   assert(maskm == 0);
@@ -91,10 +99,10 @@ GMGSolver_t<val_t>::GMGSolver_t(const VecLong_t &Aids, const VecUInt_t &Ai,
   auto algo = GMGAlgorithm_t::Gemv;
   auto mode = platform->device.mode();
   auto id   = platform->device.id();
-  solver    = new GMGLocalSolver_t<val_t>(Aids_, Ai, Aj, Av, algo, mode, id);
+  solver    = new GMGLocalSolver_t<val_t>(Aids, Ai, Aj, Av, algo, mode, id);
 
-  // Setup the gather-scatter handle for coarse average.
-  SetupCoarseAverage(Aids_, platform->comm.mpiComm);
+  // Setup the gather-scatter handle for coarse average:
+  SetupCoarseAverage(Aids, comm);
 
   // Copy the unassembled A matrix:
   const size_t nnz = shared_size * crs_size;

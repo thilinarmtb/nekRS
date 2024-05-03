@@ -1,5 +1,5 @@
-#if !defined(__LOCAL_SOLVER_HPP__)
-#define __LOCAL_SOLVER_HPP__
+#if !defined(__GMG_LOCAL_SOLVER_HPP__)
+#define __GMG_LOCAL_SOLVER_HPP__
 
 #include "gmgTypes.hpp"
 
@@ -51,4 +51,4 @@ private:
 template class GMGLocalSolver_t<float>;
 template class GMGLocalSolver_t<double>;
 
-#endif // __LOCAL_SOLVER_HPP__
+#endif // __GMG_LOCAL_SOLVER_HPP__

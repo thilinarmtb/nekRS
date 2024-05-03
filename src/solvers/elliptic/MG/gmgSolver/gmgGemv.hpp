@@ -1,9 +1,12 @@
+#if !defined(__GMG_GEMV_HPP__)
+#define __GMG_GEMV_HPP__
+
 #include <cassert>
+
+#include "gmgLocalSolver.hpp"
 
 #include "gemv.h"
 #include "lapacke.h"
-
-#include "gmgLocalSolver.hpp"
 
 template <typename val_t>
 class GMGGemv_t : public GMGLocalSolverInterface_t<val_t> {
@@ -75,3 +78,5 @@ template <typename val_t> GMGGemv_t<val_t>::~GMGGemv_t() {
   gemv_device_free(&d_x);
   gemv_finalize(&gemv);
 }
+
+#endif // __GMG_GEMV_HPP__

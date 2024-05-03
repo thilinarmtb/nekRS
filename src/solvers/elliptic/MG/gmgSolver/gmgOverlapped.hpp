@@ -3,9 +3,8 @@
 
 #include "gmgTypes.hpp"
 
-void gmgSetupOverlappedSystem(unsigned *nei, long long *eids, unsigned nv,
-                              long long *vids, double *xyz, double *mask,
-                              double *mat, int *frontier, unsigned nw,
-                              int *wids, MPI_Comm comm, unsigned max_ne);
+void gmgFindOverlappedSystem(VecLong_t &Aids, VecUInt_t &Ai, VecUInt_t &Aj,
+                             VecDouble_t &Av, VecInt_t &frontier,
+                             const MPI_Comm comm);
 
 #endif // __GMG_OVERLAPPED_HPP__
