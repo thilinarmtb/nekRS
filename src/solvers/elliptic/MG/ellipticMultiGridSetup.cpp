@@ -30,6 +30,12 @@
 #include "ellipticMultiGrid.h"
 #include "ellipticBuildFEM.hpp"
 
+#include "gmgSetup.hpp"
+
+occa::memory o_smootherResidual = platform->device.malloc<pfloat>(1024);
+occa::memory o_smootherResidual2 = platform->device.malloc<pfloat>(1024);
+occa::memory o_smootherUpdate = platform->device.malloc<pfloat>(1024);
+
 void pMGLevelAllocateStorage(pMGLevel *level, int k)
 {
   // allocate but reuse finest level
@@ -43,18 +49,31 @@ void pMGLevelAllocateStorage(pMGLevel *level, int k)
   // extra storage for smoother
   const size_t N = level->Ncols;
 
-  if (pMGLevel::o_smootherResidual.length() < N) {
-    pMGLevel::o_smootherResidual.free();
-    pMGLevel::o_smootherResidual = platform->device.malloc<pfloat>(N);
+  if (o_smootherResidual.length() < N) {
+    o_smootherResidual.free();
+    o_smootherResidual = platform->device.malloc<pfloat>(N);
   }
-  if (pMGLevel::o_smootherResidual2.length() < N) {
-    pMGLevel::o_smootherResidual2.free();
-    pMGLevel::o_smootherResidual2 = platform->device.malloc<pfloat>(N);
+  if (o_smootherResidual2.length() < N) {
+    o_smootherResidual2.free();
+    o_smootherResidual2 = platform->device.malloc<pfloat>(N);
   }
-  if (pMGLevel::o_smootherUpdate.length() < N) {
-    pMGLevel::o_smootherUpdate.free();
-    pMGLevel::o_smootherUpdate = platform->device.malloc<pfloat>(N);
+  if (o_smootherUpdate.length() < N) {
+    o_smootherUpdate.free();
+    o_smootherUpdate = platform->device.malloc<pfloat>(N);
   }
+}
+
+static void setupCoarseLevelWorkArrays(MGSolver_t::coarseLevel_t *const coarseLevel, elliptic_t *const ellipticCoarse) {
+  coarseLevel->ogs = ellipticCoarse->ogs;
+  coarseLevel->o_weight = ellipticCoarse->o_invDegree;
+  coarseLevel->weight = (pfloat *)calloc(ellipticCoarse->mesh->Nlocal, sizeof(pfloat));
+  coarseLevel->o_weight.copyTo(coarseLevel->weight, ellipticCoarse->mesh->Nlocal);
+  coarseLevel->h_Gx = platform->device.mallocHost<pfloat>(coarseLevel->ogs->Ngather);
+  coarseLevel->Gx = (pfloat *)coarseLevel->h_Gx.ptr();
+  coarseLevel->o_Gx = platform->device.malloc<pfloat>(coarseLevel->ogs->Ngather);
+  coarseLevel->h_Sx = platform->device.mallocHost<pfloat>(ellipticCoarse->mesh->Nlocal);
+  coarseLevel->Sx = (pfloat *)coarseLevel->h_Sx.ptr();
+  coarseLevel->o_Sx = platform->device.malloc<pfloat>(ellipticCoarse->mesh->Nlocal);
 }
 
 void ellipticMultiGridSetup(elliptic_t *elliptic_, precon_t *precon_)
@@ -226,7 +245,7 @@ void ellipticMultiGridSetup(elliptic_t *elliptic_, precon_t *precon_)
       precon->SEMFEMSolver = new SEMFEMSolver_t(ellipticCoarse);
       if (options.compareArgs("MULTIGRID COARSE SOLVE AND SMOOTH", "TRUE")) {
         auto baseLevel = (pMGLevel *)levels[numMGLevels - 1];
-        auto &o_tmp = pMGLevel::o_smootherUpdate;
+        auto &o_tmp = o_smootherUpdate;
         precon->MGSolver->coarseLevel->solvePtr =
             [elliptic, baseLevel, &o_tmp](MGSolver_t::coarseLevel_t *coarseLevel,
                                           occa::memory &o_rhs,
@@ -249,6 +268,14 @@ void ellipticMultiGridSetup(elliptic_t *elliptic_, precon_t *precon_)
               precon->SEMFEMSolver->run(o_rhs, o_x);
             };
       }
+    }
+    else if (options.compareArgs("COARSE SOLVER", "GMGSOLVER")) {
+      VecLong_t Aids;
+      VecUInt_t Ai, Aj;
+      VecDouble_t Av;
+      gmgSetupCoarseSystem(Aids, Ai, Aj, Av, ellipticCoarse, elliptic);
+      precon->MGSolver->coarseLevel->setupSolver(Aids, Ai, Aj, Av, elliptic->allNeumann);
+      setupCoarseLevelWorkArrays(precon->MGSolver->coarseLevel, ellipticCoarse);
     }
     else {
 
@@ -281,21 +308,11 @@ void ellipticMultiGridSetup(elliptic_t *elliptic_, precon_t *precon_)
       free(Cols);
       free(Vals);
 
-      MGSolver_t::coarseLevel_t *coarseLevel = precon->MGSolver->coarseLevel;
-      coarseLevel->ogs = ellipticCoarse->ogs;
-      coarseLevel->o_weight = ellipticCoarse->o_invDegree;
-      coarseLevel->weight = (pfloat *)calloc(ellipticCoarse->mesh->Nlocal, sizeof(pfloat));
-      coarseLevel->o_weight.copyTo(coarseLevel->weight, ellipticCoarse->mesh->Nlocal);
-      coarseLevel->h_Gx = platform->device.mallocHost<pfloat>(coarseLevel->ogs->Ngather);
-      coarseLevel->Gx = (pfloat *)coarseLevel->h_Gx.ptr();
-      coarseLevel->o_Gx = platform->device.malloc<pfloat>(coarseLevel->ogs->Ngather);
-      coarseLevel->h_Sx = platform->device.mallocHost<pfloat>(ellipticCoarse->mesh->Nlocal);
-      coarseLevel->Sx = (pfloat *)coarseLevel->h_Sx.ptr();
-      coarseLevel->o_Sx = platform->device.malloc<pfloat>(ellipticCoarse->mesh->Nlocal);
+      setupCoarseLevelWorkArrays(precon->MGSolver->coarseLevel, ellipticCoarse);
 
       if (options.compareArgs("MULTIGRID COARSE SOLVE AND SMOOTH", "TRUE")) {
         auto baseLevel = (pMGLevel *)levels[numMGLevels - 1];
-        auto &o_tmp = pMGLevel::o_smootherUpdate;
+        auto &o_tmp = o_smootherUpdate;
         precon->MGSolver->coarseLevel->solvePtr = [baseLevel, &o_tmp](MGSolver_t::coarseLevel_t *coarseLevel,
                                                                       occa::memory &o_rhs,
                                                                       occa::memory &o_x) {

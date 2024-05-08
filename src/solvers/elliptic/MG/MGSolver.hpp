@@ -38,6 +38,7 @@ SOFTWARE.
 #include "hypreWrapper.hpp"
 #include "hypreWrapperDevice.hpp"
 #include "AMGX.hpp"
+#include "gmgSolver.hpp"
 
 class MGSolver_t {
 
@@ -95,11 +96,13 @@ public:
     ~coarseLevel_t();
 
     void setupSolver(hlong* globalRowStarts, dlong nnz, hlong* Ai, hlong* Aj, dfloat* Avals, bool nullSpace);
+    void setupSolver(VecLong_t &Aids, VecUInt_t &Ai, VecUInt_t &Aj, VecDouble_t &Av, bool nullSpace);
     void solve(occa::memory& o_rhs, occa::memory& o_x);
     std::function<void(coarseLevel_t *, occa::memory&, occa::memory&)> solvePtr = nullptr;
  
     void *boomerAMG = nullptr;
     AMGX_t *AMGX = nullptr;
+    GMGSolver_t<pfloat> *GMGSolver = nullptr;
   
   };
 

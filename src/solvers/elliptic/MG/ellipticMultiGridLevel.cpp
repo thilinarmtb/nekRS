@@ -29,6 +29,7 @@
 #include "ellipticMultiGrid.h"
 #include "linAlg.hpp"
 #include <iostream>
+
 void pMGLevel::Ax(occa::memory o_x, occa::memory o_Ax)
 {
   ellipticOperator(elliptic,o_x,o_Ax, pfloatString);

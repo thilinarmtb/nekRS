@@ -272,6 +272,8 @@ void ellipticSolveSetup(elliptic_t *elliptic)
     elliptic->AxKernel = platform->kernels.get(kernelNamePrefix + "Partial" + kernelName);
 
     elliptic->updatePCGKernel = platform->kernels.get(sectionIdentifier + "ellipticBlockUpdatePCG");
+
+    elliptic->SchwarzGatherRHSKernel = platform->kernels.get("SchwarzGatherRSHKernel");
   }
 
   auto timeEllipticOperator = [&]() {

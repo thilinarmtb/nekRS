@@ -1,5 +1,5 @@
-#if !defined(nekrs_io_hpp_)
-#define nekrs_io_hpp_
+#if !defined(nekrs_fldfile_hpp_)
+#define nekrs_fldfile_hpp_
 
 #include "nrs.hpp"
 

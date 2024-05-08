@@ -168,6 +168,9 @@ struct elliptic_t
   occa::kernel combinedPCGPostMatVecKernel;
   occa::kernel combinedPCGUpdateConvergedSolutionKernel;
 
+  // Schwarz solver
+  occa::kernel SchwarzGatherRHSKernel;
+
   occa::memory o_lambda0;
   dfloat lambda0Avg;
   occa::memory o_lambda1;

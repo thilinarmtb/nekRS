@@ -3,6 +3,7 @@ set(ELLIPTIC_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/elliptic)
 set(ELLIPTIC_SOURCES
         ${ELLIPTIC_SOURCE_DIR}/linearSolver/PCG.cpp
         ${ELLIPTIC_SOURCE_DIR}/linearSolver/PGMRES.cpp
+        ${ELLIPTIC_SOURCE_DIR}/linearSolver/xxt/xxt.cpp
         ${ELLIPTIC_SOURCE_DIR}/amgSolver/amgx/AMGX.cpp
         ${ELLIPTIC_SOURCE_DIR}/ellipticApplyMask.cpp
         ${ELLIPTIC_SOURCE_DIR}/ellipticUpdateJacobi.cpp
@@ -25,9 +26,13 @@ set(ELLIPTIC_SOURCES
         ${ELLIPTIC_SOURCE_DIR}/ellipticSolve.cpp
         ${ELLIPTIC_SOURCE_DIR}/ellipticOgs.cpp
         ${ELLIPTIC_SOURCE_DIR}/ellipticSetup.cpp
+        ${ELLIPTIC_SOURCE_DIR}/ellipticZeroMean.cpp
         ${ELLIPTIC_SOURCE_DIR}/SEMFEMSolver.cpp
         ${ELLIPTIC_SOURCE_DIR}/SEMFEMSolverBuild.cpp
         ${ELLIPTIC_SOURCE_DIR}/MG/coarseLevel.cpp
         ${ELLIPTIC_SOURCE_DIR}/MG/level.cpp
         ${ELLIPTIC_SOURCE_DIR}/MG/MGSolver.cpp
-        ${ELLIPTIC_SOURCE_DIR}/ellipticZeroMean.cpp)
+        ${ELLIPTIC_SOURCE_DIR}/MG/gmgSolver/gmgSetup.cpp
+        ${ELLIPTIC_SOURCE_DIR}/MG/gmgSolver/gmgOverlapped.cpp
+        ${ELLIPTIC_SOURCE_DIR}/MG/gmgSolver/gmgLocalSolver.cpp
+        ${ELLIPTIC_SOURCE_DIR}/MG/gmgSolver/gmgSolver.cpp)

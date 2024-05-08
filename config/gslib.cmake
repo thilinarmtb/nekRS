@@ -1,5 +1,4 @@
-set(GS_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/3rd_party/gslib/)
-set(GS_LIB 3rd_party/gslib/libgs.a)
+set(GS_SOURCE_DIR ${CMAKE_SOURCE_DIR}/3rd_party/gslib/)
 set(OGS_SOURCE_DIR ${GS_SOURCE_DIR}/ogs)
 
 # =============================================================
@@ -16,7 +15,9 @@ FetchContent_GetProperties(gs_content)
 if (NOT gs_content_POPULATED)
     FetchContent_Populate(gs_content)
 endif()
+FetchContent_GetProperties(gs_content)
 set(GS_SOURCE_DIR ${gs_content_SOURCE_DIR})
+set(GSLIB ${GS_SOURCE_DIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}gs${CMAKE_STATIC_LIBRARY_SUFFIX})
 
 # Build gslib
 ExternalProject_Add(
@@ -34,7 +35,7 @@ ExternalProject_Add(
 
 # Target for libraries
 add_library(gs STATIC IMPORTED)
-set_target_properties(gs PROPERTIES IMPORTED_LOCATION ${GS_SOURCE_DIR}/lib/libgs.a)
+set_target_properties(gs PROPERTIES IMPORTED_LOCATION ${GSLIB})
 target_include_directories(gs INTERFACE ${GS_SOURCE_DIR}/src)
 add_dependencies(gs gs_build)
 
