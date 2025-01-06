@@ -31,4 +31,6 @@ set(ELLIPTIC_SOURCES
         ${ELLIPTIC_SOURCE_DIR}/MG/coarseLevel.cpp
         ${ELLIPTIC_SOURCE_DIR}/MG/level.cpp
         ${ELLIPTIC_SOURCE_DIR}/MG/MGSolver.cpp
-        ${ELLIPTIC_SOURCE_DIR}/ellipticZeroMean.cpp)
+        ${ELLIPTIC_SOURCE_DIR}/ellipticZeroMean.cpp
+        ${ELLIPTIC_SOURCE_DIR}/xxt/jl.cpp
+        ${ELLIPTIC_SOURCE_DIR}/xxt/crs_xxt.cpp)

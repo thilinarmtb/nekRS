@@ -834,6 +834,7 @@ void parseCoarseSolver(const int rank, setupAide &options, inipp::Ini *ini, std:
       {"smoother"},
       {"boomeramg"},
       {"amgx"},
+      {"xxt"},
       {"cpu"},
       {"device"},
       {"overlap"},
@@ -847,7 +848,8 @@ void parseCoarseSolver(const int rank, setupAide &options, inipp::Ini *ini, std:
   const int smoother = p_coarseSolver.find("smoother") != std::string::npos;
   const int amgx = p_coarseSolver.find("amgx") != std::string::npos;
   const int boomer = p_coarseSolver.find("boomeramg") != std::string::npos;
-  if (amgx + boomer > 1) {
+  const int xxt = p_coarseSolver.find("xxt") != std::string::npos;
+  if (amgx + boomer + xxt > 1) {
     append_error("Conflicting solver types in coarseSolver!\n");
   }
 
@@ -898,6 +900,11 @@ void parseCoarseSolver(const int rank, setupAide &options, inipp::Ini *ini, std:
         }
       }
     }
+  } else if (xxt) {
+    options.setArgs(parSectionName + "MULTIGRID COARSE SOLVE", "TRUE");
+    options.setArgs(parSectionName + "COARSE SOLVER", "XXT");
+    options.setArgs(parSectionName + "COARSE SOLVER PRECISION", "FP32");
+    options.setArgs(parSectionName + "COARSE SOLVER LOCATION", "CPU");
   } else {
     options.setArgs(parSectionName + "COARSE SOLVER", "SMOOTHER");
     options.removeArgs(parSectionName + "COARSE SOLVER PRECISION");

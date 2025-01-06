@@ -30,6 +30,8 @@
 #include "ellipticMultiGrid.h"
 #include "ellipticBuildFEM.hpp"
 
+#include "jl.hpp"
+
 void ellipticMultiGridSetup(elliptic_t *elliptic_)
 {
   if (platform->comm.mpiRank == 0) {
@@ -236,44 +238,62 @@ void ellipticMultiGridSetup(elliptic_t *elliptic_)
             };
       }
     } else {
-
       hlong *coarseGlobalStarts = (hlong *)calloc(platform->comm.mpiCommSize + 1, sizeof(hlong));
 
-      nonZero_t *coarseA;
-      dlong nnzCoarseA;
+      int jl = options.compareArgs("COARSE SOLVER", "XXT");
+      if (jl) {
+        uint num_total, nnz;
+        uint *ia, *ja;
+        ulong *gids;
+        double *a;
+        jl_setup_aux(&num_total, &gids, &nnz, &ia, &ja, &a, ellipticCoarse, elliptic);
 
-      if (options.compareArgs("GALERKIN COARSE OPERATOR", "TRUE")) {
-        ellipticBuildFEMGalerkinHex3D(ellipticCoarse, elliptic, &coarseA, &nnzCoarseA, coarseGlobalStarts);
+        jl_setup(platform->comm.mpiComm, num_total, gids, nnz, ia, ja, a, elliptic->nullspace, 1);
+
+        int rank = platform->comm.mpiRank;
+        coarseGlobalStarts[rank] = 0;
+        coarseGlobalStarts[rank + 1] = num_total;
+
+        precon->MGSolver->coarseLevel->setupSolver(coarseGlobalStarts, 0, 0, 0, 0, elliptic->nullspace);
+
+        free(gids), free(ia), free(ja), free(a);
       } else {
-        ellipticBuildFEM(ellipticCoarse, &coarseA, &nnzCoarseA, coarseGlobalStarts);
+        nonZero_t *coarseA;
+        dlong nnzCoarseA;
+
+        if (options.compareArgs("GALERKIN COARSE OPERATOR", "TRUE")) {
+          ellipticBuildFEMGalerkinHex3D(ellipticCoarse, elliptic, &coarseA, &nnzCoarseA, coarseGlobalStarts);
+        } else {
+          ellipticBuildFEM(ellipticCoarse, &coarseA, &nnzCoarseA, coarseGlobalStarts);
+        }
+
+        hlong *Rows = (hlong *)calloc(nnzCoarseA, sizeof(hlong));
+        hlong *Cols = (hlong *)calloc(nnzCoarseA, sizeof(hlong));
+        dfloat *Vals = (dfloat *)calloc(nnzCoarseA, sizeof(dfloat));
+
+        for (dlong i = 0; i < nnzCoarseA; i++) {
+          Rows[i] = coarseA[i].row;
+          Cols[i] = coarseA[i].col;
+          Vals[i] = coarseA[i].val;
+
+          nekrsCheck(Rows[i] < 0 || Cols[i] < 0 || std::isnan(Vals[i]),
+                     MPI_COMM_SELF,
+                     EXIT_FAILURE,
+                     "invalid {row %lld, col %lld , val %g}\n",
+                     Rows[i],
+                     Cols[i],
+                     Vals[i]);
+        }
+
+        precon->MGSolver->coarseLevel
+            ->setupSolver(coarseGlobalStarts, nnzCoarseA, Rows, Cols, Vals, elliptic->nullspace);
+
+        free(Rows);
+        free(Cols);
+        free(Vals);
+        free(coarseA);
       }
-
-      hlong *Rows = (hlong *)calloc(nnzCoarseA, sizeof(hlong));
-      hlong *Cols = (hlong *)calloc(nnzCoarseA, sizeof(hlong));
-      dfloat *Vals = (dfloat *)calloc(nnzCoarseA, sizeof(dfloat));
-
-      for (dlong i = 0; i < nnzCoarseA; i++) {
-        Rows[i] = coarseA[i].row;
-        Cols[i] = coarseA[i].col;
-        Vals[i] = coarseA[i].val;
-
-        nekrsCheck(Rows[i] < 0 || Cols[i] < 0 || std::isnan(Vals[i]),
-                   MPI_COMM_SELF,
-                   EXIT_FAILURE,
-                   "invalid {row %lld, col %lld , val %g}\n",
-                   Rows[i],
-                   Cols[i],
-                   Vals[i]);
-      }
-      free(coarseA);
-
-      precon->MGSolver->coarseLevel
-          ->setupSolver(coarseGlobalStarts, nnzCoarseA, Rows, Cols, Vals, elliptic->nullspace);
-
       free(coarseGlobalStarts);
-      free(Rows);
-      free(Cols);
-      free(Vals);
 
       MGSolver_t::coarseLevel_t *coarseLevel = precon->MGSolver->coarseLevel;
       coarseLevel->ogs = ellipticCoarse->ogs;
